@@ -14,6 +14,12 @@ import (
 	"github.com/maximhq/bifrost/plugins/prompts"
 	"github.com/maximhq/bifrost/plugins/semanticcache"
 	"github.com/maximhq/bifrost/plugins/telemetry"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/audit"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/clustering"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/guardrails"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/loadbalancer"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/rbac"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/sso"
 	"github.com/maximhq/bifrost/transports/bifrost-http/handlers"
 	"github.com/maximhq/bifrost/transports/bifrost-http/lib"
 )
@@ -111,6 +117,48 @@ func loadBuiltinPlugin(ctx context.Context, name string, pluginConfig any, bifro
 			return nil, fmt.Errorf("failed to marshal compat plugin config: %w", err)
 		}
 		return compat.Init(*compatConfig, logger, bifrostConfig.ModelCatalog)
+
+	case rbac.PluginName:
+		rbacConfig, err := MarshalPluginConfig[rbac.Config](pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal rbac plugin config: %w", err)
+		}
+		return rbac.Init(rbacConfig, logger), nil
+
+	case audit.PluginName:
+		auditConfig, err := MarshalPluginConfig[audit.Config](pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal audit plugin config: %w", err)
+		}
+		return audit.Init(auditConfig, logger), nil
+
+	case guardrails.PluginName:
+		guardConfig, err := MarshalPluginConfig[guardrails.Config](pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal guardrails plugin config: %w", err)
+		}
+		return guardrails.Init(guardConfig, logger), nil
+
+	case sso.PluginName:
+		ssoConfig, err := MarshalPluginConfig[sso.Config](pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal sso plugin config: %w", err)
+		}
+		return sso.Init(ssoConfig, logger), nil
+
+	case clustering.PluginName:
+		clusterConfig, err := MarshalPluginConfig[clustering.Config](pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal clustering plugin config: %w", err)
+		}
+		return clustering.Init(clusterConfig, logger), nil
+
+	case loadbalancer.PluginName:
+		lbConfig, err := MarshalPluginConfig[loadbalancer.Config](pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal adaptive_loadbalancer plugin config: %w", err)
+		}
+		return loadbalancer.Init(lbConfig, logger), nil
 
 	default:
 		return nil, fmt.Errorf("unknown built-in plugin: %s", name)
@@ -234,6 +282,63 @@ func (s *BifrostHTTPServer) loadBuiltinPlugins(ctx context.Context) error {
 		s.markPluginDisabled(maxim.PluginName)
 	}
 	s.Config.SetPluginOrderInfo(maxim.PluginName, builtinPlacement, schemas.Ptr(8))
+
+	// 9-14. Enterprise plugins (when enterprise mode is enabled)
+	if ctx.Value(schemas.BifrostContextKeyIsEnterprise) != nil {
+		// RBAC
+		rbacConfig := s.getPluginConfig(rbac.PluginName)
+		if rbacConfig != nil && rbacConfig.Enabled {
+			s.registerPluginWithStatus(ctx, rbac.PluginName, nil, rbacConfig.Config, false)
+		} else {
+			s.markPluginDisabled(rbac.PluginName)
+		}
+		s.Config.SetPluginOrderInfo(rbac.PluginName, builtinPlacement, schemas.Ptr(9))
+
+		// Audit Logs
+		auditConfig := s.getPluginConfig(audit.PluginName)
+		if auditConfig != nil && auditConfig.Enabled {
+			s.registerPluginWithStatus(ctx, audit.PluginName, nil, auditConfig.Config, false)
+		} else {
+			s.markPluginDisabled(audit.PluginName)
+		}
+		s.Config.SetPluginOrderInfo(audit.PluginName, builtinPlacement, schemas.Ptr(10))
+
+		// Guardrails
+		guardConfig := s.getPluginConfig(guardrails.PluginName)
+		if guardConfig != nil && guardConfig.Enabled {
+			s.registerPluginWithStatus(ctx, guardrails.PluginName, nil, guardConfig.Config, false)
+		} else {
+			s.markPluginDisabled(guardrails.PluginName)
+		}
+		s.Config.SetPluginOrderInfo(guardrails.PluginName, builtinPlacement, schemas.Ptr(11))
+
+		// SSO
+		ssoConfig := s.getPluginConfig(sso.PluginName)
+		if ssoConfig != nil && ssoConfig.Enabled {
+			s.registerPluginWithStatus(ctx, sso.PluginName, nil, ssoConfig.Config, false)
+		} else {
+			s.markPluginDisabled(sso.PluginName)
+		}
+		s.Config.SetPluginOrderInfo(sso.PluginName, builtinPlacement, schemas.Ptr(12))
+
+		// Clustering
+		clusterConfig := s.getPluginConfig(clustering.PluginName)
+		if clusterConfig != nil && clusterConfig.Enabled {
+			s.registerPluginWithStatus(ctx, clustering.PluginName, nil, clusterConfig.Config, false)
+		} else {
+			s.markPluginDisabled(clustering.PluginName)
+		}
+		s.Config.SetPluginOrderInfo(clustering.PluginName, builtinPlacement, schemas.Ptr(13))
+
+		// Adaptive Load Balancer
+		lbConfig := s.getPluginConfig(loadbalancer.PluginName)
+		if lbConfig != nil && lbConfig.Enabled {
+			s.registerPluginWithStatus(ctx, loadbalancer.PluginName, nil, lbConfig.Config, false)
+		} else {
+			s.markPluginDisabled(loadbalancer.PluginName)
+		}
+		s.Config.SetPluginOrderInfo(loadbalancer.PluginName, builtinPlacement, schemas.Ptr(14))
+	}
 
 	return nil
 }

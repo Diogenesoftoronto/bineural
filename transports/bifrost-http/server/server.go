@@ -1233,6 +1233,12 @@ func (s *BifrostHTTPServer) Bootstrap(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to load config %v", err)
 	}
+	// Set enterprise flag on context based on config
+	if s.Config.ClientConfig.EnableEnterprise {
+		ctx = context.WithValue(ctx, schemas.BifrostContextKeyIsEnterprise, true)
+		s.Ctx, s.cancel = schemas.NewBifrostContextWithCancel(ctx)
+		logger.Info("enterprise mode enabled")
+	}
 	if s.Config.KVStore != nil {
 		integrations.RegisterKVDecoders(s.Config.KVStore)
 	}

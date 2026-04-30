@@ -77,6 +77,7 @@ type ClientConfig struct {
 	RoutingChainMaxDepth                  int                              `json:"routing_chain_max_depth"`              // Maximum depth for routing rule chain evaluation (default: 10)
 	MCPExternalServerURL                  *schemas.EnvVar                  `json:"mcp_external_server_url,omitempty"`    // Public base URL advertised in OAuth server metadata (.well-known, WWW-Authenticate). Supports env var syntax ("env.MY_VAR")
 	MCPExternalClientURL                  *schemas.EnvVar                  `json:"mcp_external_client_url,omitempty"`    // Public base URL used as redirect_uri when Bifrost acts as an OAuth client to upstream MCP servers. Supports env var syntax ("env.MY_VAR")
+	EnableEnterprise                      bool                             `json:"enable_enterprise,omitempty"`          // Enable enterprise-only features (RBAC, audit logs, guardrails, clustering)
 	ConfigHash                            string                           `json:"-"`                                    // Config hash for reconciliation (not serialized)
 }
 

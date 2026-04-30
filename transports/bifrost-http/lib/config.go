@@ -122,7 +122,13 @@ func IsBuiltinPlugin(name string) bool {
 		name == compat.PluginName ||
 		name == maxim.PluginName ||
 		name == semanticcache.PluginName ||
-		name == otel.PluginName
+		name == otel.PluginName ||
+		name == "rbac" ||
+		name == "audit" ||
+		name == "guardrails" ||
+		name == "sso" ||
+		name == "clustering" ||
+		name == "adaptive_loadbalancer"
 }
 
 // pluginOrderInfo stores ordering metadata for a plugin.
