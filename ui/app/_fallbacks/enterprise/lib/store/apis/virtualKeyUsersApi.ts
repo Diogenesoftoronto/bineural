@@ -1,22 +1,17 @@
+import { baseApi } from "@/lib/store/apis/baseApi";
 import { User } from "@enterprise/lib/types/user";
 
 export interface GetVirtualKeyUsersResponse {
 	users: User[];
 }
 
-// OSS build has no VK-user-attachment backend — return undefined data so the
-// consumer treats the VK as unassigned (no AP-managed detection happens).
-export const useGetVirtualKeyUsersQuery = (
-	_vkId: string,
-	_opts?: { skip?: boolean },
-): {
-	data: GetVirtualKeyUsersResponse | undefined;
-	isLoading: boolean;
-	isError: boolean;
-	error: null;
-} => ({
-	data: undefined,
-	isLoading: false,
-	isError: false,
-	error: null,
+export const virtualKeyUsersApi = baseApi.injectEndpoints({
+	endpoints: (builder) => ({
+		getVirtualKeyUsers: builder.query<GetVirtualKeyUsersResponse, string>({
+			query: (vkId) => `/enterprise/virtual-keys/${vkId}/users`,
+			providesTags: (_result, _error, vkId) => [{ type: "VirtualKeyUsers", id: vkId }],
+		}),
+	}),
 });
+
+export const { useGetVirtualKeyUsersQuery } = virtualKeyUsersApi;

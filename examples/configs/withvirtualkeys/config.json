@@ -1,5 +1,5 @@
 {
-  "$schema": "https://www.getbifrost.ai/schema",
+  "$schema": "https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json",
   "client": {
     "allow_direct_keys": false,
     "allowed_origins": [

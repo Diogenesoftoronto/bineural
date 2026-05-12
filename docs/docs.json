@@ -6,7 +6,7 @@
     "light": "/media/bifrost-logo.png"
   },
   "banner": {
-    "content": "Try Bifrost Enterprise free for 14 days. [Explore now](https://www.getmaxim.ai/bifrost/enterprise)",
+    "content": "Try Bifrost Enterprise free for 14 days. [Explore now](https://github.com/maximhq/bifrost/wiki/Enterprise)",
     "dismissible": true
   },
   "theme": "mint",
@@ -34,7 +34,7 @@
     "primary": {
       "type": "button",
       "label": "Book a demo",
-      "href": "https://www.getmaxim.ai/bifrost/book-a-demo"
+      "href": "https://github.com/maximhq/bifrost/wiki/Enterprise"
     }
   },
   "navigation": {
@@ -48,7 +48,7 @@
         {
           "anchor": "Try Enterprise",
           "icon": "building",
-          "href": "https://www.getmaxim.ai/bifrost/enterprise"
+          "href": "https://github.com/maximhq/bifrost/wiki/Enterprise"
         }
       ]
     },
@@ -827,7 +827,7 @@
   ],
   "footer": {
     "socials": {
-      "x": "https://x.com/getmaximai",
+      "x": "https://github.com/maximhq/bifrost",
       "github": "https://github.com/maximhq/bifrost",
       "linkedin": "https://linkedin.com/company/maxim-ai"
     }

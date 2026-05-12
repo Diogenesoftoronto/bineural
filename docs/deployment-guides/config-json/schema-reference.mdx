@@ -5,7 +5,7 @@ icon: "brackets-curly"
 ---
 
 <Note>
-The live schema is published at [`https://www.getbifrost.ai/schema`](https://www.getbifrost.ai/schema). Add `"$schema": "https://www.getbifrost.ai/schema"` to your `config.json` for IDE autocomplete and inline validation.
+The live schema is published at [`https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json`](https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json). Add `"$schema": "https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json"` to your `config.json` for IDE autocomplete and inline validation.
 </Note>
 
 This page is a concise reference for every top-level key in `config.json`. Click the **Guide** links for full field-by-field documentation.
@@ -16,7 +16,7 @@ This page is a concise reference for every top-level key in `config.json`. Click
 
 | Key | Type | Description | Guide |
 |-----|------|-------------|-------|
-| `$schema` | string | Schema URL for IDE validation. Set to `"https://www.getbifrost.ai/schema"` | - |
+| `$schema` | string | Schema URL for IDE validation. Set to `"https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json"` | - |
 | `encryption_key` | string | Optional AES-256 key (derived via Argon2id). Accepts `env.VAR` prefix and is also read from `BIFROST_ENCRYPTION_KEY`. If omitted, data is stored in plaintext. | [Client](/deployment-guides/config-json/client#encryption-key) |
 | `client` | object | Worker pool, logging, CORS, auth enforcement, header filtering, MCP, compat shims | [Client](/deployment-guides/config-json/client) |
 | `providers` | object | LLM provider API keys, network settings, concurrency | [Providers](/deployment-guides/config-json/providers) |
@@ -240,7 +240,7 @@ Optional tuning for the WebSocket gateway (Responses API WebSocket mode, Realtim
 
 ```json
 {
-  "$schema": "https://www.getbifrost.ai/schema",
+  "$schema": "https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json",
   "encryption_key": "env.BIFROST_ENCRYPTION_KEY",
   "providers": {
     "openai": {

@@ -12,7 +12,7 @@
   1. **GitHub Security Advisories (preferred)**: Use [GitHub's private vulnerability
   reporting](https://github.com/maximhq/bifrost/security/advisories/new) to submit a report
   directly through the repository.
-  2. **Email**: Send an email to **akshay@getmaxim.ai** with the details of the
+  2. **Email**: Send an email to **bifrost-community@users.noreply.github.com** with the details of the
   vulnerability.
 
   ### What to include

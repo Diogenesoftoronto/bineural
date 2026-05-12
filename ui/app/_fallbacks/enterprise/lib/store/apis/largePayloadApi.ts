@@ -1,18 +1,21 @@
+import { baseApi } from "@/lib/store/apis/baseApi";
 import { LargePayloadConfig } from "@enterprise/lib/types/largePayload";
 
-export const useGetLargePayloadConfigQuery = (): {
-	data: LargePayloadConfig | undefined;
-	isLoading: boolean;
-	isError: boolean;
-	error: null;
-} => ({
-	data: undefined,
-	isLoading: false,
-	isError: false,
-	error: null,
+export const largePayloadApi = baseApi.injectEndpoints({
+	endpoints: (builder) => ({
+		getLargePayloadConfig: builder.query<LargePayloadConfig, void>({
+			query: () => "/enterprise/large-payload/config",
+			providesTags: ["LargePayloadConfig"],
+		}),
+		updateLargePayloadConfig: builder.mutation<void, LargePayloadConfig>({
+			query: (config) => ({
+				url: "/enterprise/large-payload/config",
+				method: "PUT",
+				body: config,
+			}),
+			invalidatesTags: ["LargePayloadConfig"],
+		}),
+	}),
 });
 
-export const useUpdateLargePayloadConfigMutation = (): [
-	(_config: LargePayloadConfig) => { unwrap: () => Promise<void> },
-	{ isLoading: boolean },
-] => [() => ({ unwrap: async () => {} }), { isLoading: false }];
+export const { useGetLargePayloadConfigQuery, useUpdateLargePayloadConfigMutation } = largePayloadApi;

@@ -245,6 +245,12 @@ func triggerMigrations(ctx context.Context, db *gorm.DB) error {
 	if err := migrationAddStopReasonColumn(ctx, db); err != nil {
 		return err
 	}
+	if err := migrationAddEnergyColumns(ctx, db); err != nil {
+		return err
+	}
+	if err := migrationAddAuditEntriesTable(ctx, db); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -2660,6 +2666,101 @@ func migrationAddStopReasonColumn(ctx context.Context, db *gorm.DB) error {
 	}})
 	if err := m.Migrate(); err != nil {
 		return fmt.Errorf("error while adding stop_reason column: %s", err.Error())
+	}
+	return nil
+}
+
+// migrationAddEnergyColumns adds energy_joules and billed_cost_usd columns to the logs table
+// for tracking per-request energy consumption from energy-aware providers (e.g., Neuralwatt).
+func migrationAddEnergyColumns(ctx context.Context, db *gorm.DB) error {
+	m := migrator.New(db, migrator.DefaultOptions, []*migrator.Migration{{
+		ID: "add_energy_columns",
+		Migrate: func(tx *gorm.DB) error {
+			tx = tx.WithContext(ctx)
+			mig := tx.Migrator()
+			if !mig.HasColumn(&Log{}, "energy_joules") {
+				if err := mig.AddColumn(&Log{}, "EnergyJoules"); err != nil {
+					return err
+				}
+			}
+			if !mig.HasColumn(&Log{}, "billed_cost_usd") {
+				if err := mig.AddColumn(&Log{}, "BilledCostUSD"); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+		Rollback: func(tx *gorm.DB) error {
+			tx = tx.WithContext(ctx)
+			mig := tx.Migrator()
+			if mig.HasColumn(&Log{}, "energy_joules") {
+				if err := mig.DropColumn(&Log{}, "EnergyJoules"); err != nil {
+					return err
+				}
+			}
+			if mig.HasColumn(&Log{}, "billed_cost_usd") {
+				if err := mig.DropColumn(&Log{}, "BilledCostUSD"); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	}})
+	if err := m.Migrate(); err != nil {
+		return fmt.Errorf("error while adding energy columns: %s", err.Error())
+	}
+	return nil
+}
+
+// migrationAddAuditEntriesTable creates the audit_entries table if it does not exist.
+func migrationAddAuditEntriesTable(ctx context.Context, db *gorm.DB) error {
+	m := migrator.New(db, migrator.DefaultOptions, []*migrator.Migration{{
+		ID: "audit_entries_init",
+		Migrate: func(tx *gorm.DB) error {
+			tx = tx.WithContext(ctx)
+			dbMigrator := tx.Migrator()
+			if !dbMigrator.HasTable(&AuditEntry{}) {
+				if err := dbMigrator.CreateTable(&AuditEntry{}); err != nil {
+					return err
+				}
+			}
+
+			// Explicitly create indexes as declared in struct tags
+			if !dbMigrator.HasIndex(&AuditEntry{}, "idx_audit_entries_event_id") {
+				if err := dbMigrator.CreateIndex(&AuditEntry{}, "idx_audit_entries_event_id"); err != nil {
+					return fmt.Errorf("failed to create index on event_id: %w", err)
+				}
+			}
+			if !dbMigrator.HasIndex(&AuditEntry{}, "idx_audit_entries_event_type") {
+				if err := dbMigrator.CreateIndex(&AuditEntry{}, "idx_audit_entries_event_type"); err != nil {
+					return fmt.Errorf("failed to create index on event_type: %w", err)
+				}
+			}
+			if !dbMigrator.HasIndex(&AuditEntry{}, "idx_audit_entries_user_id") {
+				if err := dbMigrator.CreateIndex(&AuditEntry{}, "idx_audit_entries_user_id"); err != nil {
+					return fmt.Errorf("failed to create index on user_id: %w", err)
+				}
+			}
+			if !dbMigrator.HasIndex(&AuditEntry{}, "idx_audit_entries_resource") {
+				if err := dbMigrator.CreateIndex(&AuditEntry{}, "idx_audit_entries_resource"); err != nil {
+					return fmt.Errorf("failed to create index on resource: %w", err)
+				}
+			}
+			if !dbMigrator.HasIndex(&AuditEntry{}, "idx_audit_entries_timestamp") {
+				if err := dbMigrator.CreateIndex(&AuditEntry{}, "idx_audit_entries_timestamp"); err != nil {
+					return fmt.Errorf("failed to create index on timestamp: %w", err)
+				}
+			}
+
+			return nil
+		},
+		Rollback: func(tx *gorm.DB) error {
+			tx = tx.WithContext(ctx)
+			return tx.Migrator().DropTable(&AuditEntry{})
+		},
+	}})
+	if err := m.Migrate(); err != nil {
+		return fmt.Errorf("error while creating audit_entries table: %s", err.Error())
 	}
 	return nil
 }

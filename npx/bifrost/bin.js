@@ -6,7 +6,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { Readable } from "stream";
 
-const BASE_URL = "https://downloads.getmaxim.ai";
+const BASE_URL = "https://github.com/maximhq/bifrost/releases/download";
 
 function isTransportVersionFlag(arg) {
 	const eq = arg.indexOf("=");
@@ -75,7 +75,7 @@ function validateRemainingArgsForBifrostHttp(args) {
 		console.error(`Known bifrost-http flags: ${knownList}`);
 		console.error(`Use --help or -h for gateway usage.`);
 		console.error(
-			`Pin a release from this wrapper with: --transport-version <tag> (see https://docs.getbifrost.ai/changelogs).`,
+			`Pin a release from this wrapper with: --transport-version <tag> (see https://github.com/maximhq/bifrost/releases).`,
 		);
 		process.exit(1);
 	}
@@ -261,18 +261,18 @@ function cacheDir() {
 
 // gets the latest version number for transport
 async function getLatestVersion() {
-	const releaseUrl = "https://getbifrost.ai/latest-release";
-	const res = await fetch(releaseUrl);
+	const releaseUrl = "https://api.github.com/repos/maximhq/bifrost/releases/latest";
+	const res = await fetch(releaseUrl, { headers: { "User-Agent": "bifrost-npx" } });
 	if (!res.ok) {
 		return null;
 	}
 	const data = await res.json();
-	return data.name;
+	return data.tag_name;
 }
 
 // Check if a specific version exists on the download server
 async function checkVersionExists(version, platformDir, archDir, binaryName) {
-	const url = `${BASE_URL}/bifrost/${version}/${platformDir}/${archDir}/${binaryName}`;
+	const url = `${BASE_URL}/${version}/bifrost-${version}-${platformDir}-${archDir}.tar.gz`;
 	const res = await fetch(url, { method: "HEAD" });
 	return res.ok;
 }
@@ -299,7 +299,7 @@ function formatBytes(bytes) {
 		const versionExists = await checkVersionExists(VERSION, platformDir, archDir, binaryName);
 		if (!versionExists) {
 			console.error(`❌ Transport version '${VERSION}' not found.`);
-			console.error(`See https://docs.getbifrost.ai/changelogs for release versions you can pass to --transport-version.`);
+			console.error(`See https://github.com/maximhq/bifrost/releases for available versions.`);
 			process.exit(1);
 		}
 		namedVersion = VERSION;
@@ -316,7 +316,7 @@ function formatBytes(bytes) {
 	// Use the same path segment as the on-disk cache dir (resolved tag), not the synthetic "latest"
 	// string. Otherwise the cached file and URL can disagree and version switches look "stuck".
 	const urlVersion = namedVersionFound ? namedVersion : VERSION;
-	downloadUrls.push(`${BASE_URL}/bifrost/${urlVersion}/${platformDir}/${archDir}/${binaryName}`);
+	downloadUrls.push(`${BASE_URL}/${urlVersion}/bifrost-${urlVersion}-${platformDir}-${archDir}.tar.gz`);
 
 	let lastError = null;
 	let binaryWorking = false;

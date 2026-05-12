@@ -159,7 +159,7 @@ lifecycle:
       command: ["sh", "-c", "sleep 15"]
 
 # Bifrost specific configuration
-# You can find entire schema at https://getbifrost.ai/schema
+# You can find entire schema at https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json
 bifrost:
   # Application settings
   appDir: /app/data
@@ -233,7 +233,7 @@ bifrost:
   framework:
     pricing:
       # Custom pricing URL for model cost data
-      pricingUrl: "https://getbifrost.ai/datasheet"
+      pricingUrl: "https://raw.githubusercontent.com/maximhq/bifrost/main/pricing/datasheet.json"
       # Sync interval in seconds (default: 86400 = 24 hours, minimum: 3600)
       pricingSyncInterval: 86400
 
@@ -242,7 +242,7 @@ bifrost:
   # When using existingSecret in providerSecrets, the keys will be injected as env vars and
   # you should use env.VAR_NAME syntax in the value field
   # Note: The entire providers block is passed through to the config as-is.
-  # See https://getbifrost.ai/schema for the full provider schema.
+  # See https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json for the full provider schema.
   providers: {}
     # openai:
     #   keys:

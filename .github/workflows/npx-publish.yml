@@ -281,7 +281,7 @@ jobs:
           \`\`\`
 
           - [View on npm](https://www.npmjs.com/package/@maximhq/bifrost-cli)
-          - [Documentation](https://docs.getbifrost.ai/quickstart/cli/getting-started)" \
+          - [Documentation](https://github.com/maximhq/bifrost/wiki/CLI-Getting-Started)" \
             --latest=false \
             ${PRERELEASE_FLAG}
 

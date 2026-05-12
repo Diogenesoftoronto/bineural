@@ -85,6 +85,9 @@ type PrometheusPlugin struct {
 	StreamInterTokenLatencySeconds *prometheus.HistogramVec
 	StreamFirstTokenLatencySeconds *prometheus.HistogramVec
 	KeyRotationEventsTotal         *prometheus.CounterVec
+	SessionAvgTPS                  *prometheus.HistogramVec
+	EnergyJoulesTotal             *prometheus.CounterVec
+	EnergyBilledCostTotal         *prometheus.CounterVec
 	customLabels                   []string
 
 	defaultHTTPLabels    []string
@@ -301,6 +304,31 @@ func Init(config *Config, pricingManager *modelcatalog.ModelCatalog, logger sche
 		[]string{"provider", "requested_model", "key_id", "key_name", "fail_reason"},
 	)
 
+	bifrostSessionAvgTPS := factory.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "bifrost_session_avg_tps",
+			Help:    "Average tokens per second observed per completed session (parent_request_id). Emitted on the final streaming chunk or non-streaming response.",
+			Buckets: prometheus.ExponentialBuckets(1, 2, 15), // 1, 2, 4, 8 ... 16384 TPS
+		},
+		append(defaultBifrostLabels, filteredCustomLabels...),
+	)
+
+	bifrostEnergyJoulesTotal := factory.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "bifrost_energy_joules_total",
+			Help: "Total energy consumption in Joules reported by providers (e.g., Neuralwatt).",
+		},
+		append(defaultBifrostLabels, filteredCustomLabels...),
+	)
+
+	bifrostEnergyBilledCostTotal := factory.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "bifrost_energy_billed_cost_total",
+			Help: "Total actual billed cost in USD reported by energy-aware providers.",
+		},
+		append(defaultBifrostLabels, filteredCustomLabels...),
+	)
+
 	plugin := &PrometheusPlugin{
 		logger:                         logger,
 		pricingManager:                 pricingManager,
@@ -322,6 +350,9 @@ func Init(config *Config, pricingManager *modelcatalog.ModelCatalog, logger sche
 		StreamInterTokenLatencySeconds: bifrostStreamInterTokenLatencySeconds,
 		StreamFirstTokenLatencySeconds: bifrostStreamFirstTokenLatencySeconds,
 		KeyRotationEventsTotal:         bifrostKeyRotationEventsTotal,
+		SessionAvgTPS:                  bifrostSessionAvgTPS,
+		EnergyJoulesTotal:             bifrostEnergyJoulesTotal,
+		EnergyBilledCostTotal:         bifrostEnergyBilledCostTotal,
 		customLabels:                   filteredCustomLabels,
 		defaultHTTPLabels:              defaultHTTPLabels,
 		defaultBifrostLabels:           defaultBifrostLabels,
@@ -581,6 +612,37 @@ func (p *PrometheusPlugin) PostLLMHook(ctx *schemas.BifrostContext, result *sche
 
 			p.InputTokensTotal.WithLabelValues(promLabelValues...).Add(float64(inputTokens))
 			p.OutputTokensTotal.WithLabelValues(promLabelValues...).Add(float64(outputTokens))
+
+			// Record session-level avg TPS (tokens / wall-clock seconds for this request)
+			if elapsed := time.Since(startTime).Seconds(); elapsed > 0 {
+				totalTokens := inputTokens + outputTokens
+				if totalTokens > 0 {
+					p.SessionAvgTPS.WithLabelValues(promLabelValues...).Observe(float64(totalTokens) / elapsed)
+				}
+			}
+
+			// Record energy metrics if the provider reported energy data
+			if result != nil {
+				var energy *schemas.EnergyConsumption
+				switch {
+				case result.ChatResponse != nil && result.ChatResponse.Usage != nil:
+					energy = result.ChatResponse.Usage.Energy
+				case result.TextCompletionResponse != nil && result.TextCompletionResponse.Usage != nil:
+					energy = result.TextCompletionResponse.Usage.Energy
+				case result.ResponsesResponse != nil && result.ResponsesResponse.Usage != nil:
+					energy = result.ResponsesResponse.Usage.Energy
+				case result.ResponsesStreamResponse != nil && result.ResponsesStreamResponse.Response != nil && result.ResponsesStreamResponse.Response.Usage != nil:
+					energy = result.ResponsesStreamResponse.Response.Usage.Energy
+				}
+				if energy != nil {
+					if energy.EnergyJoules > 0 {
+						p.EnergyJoulesTotal.WithLabelValues(promLabelValues...).Add(energy.EnergyJoules)
+					}
+					if energy.BilledCostUSD > 0 {
+						p.EnergyBilledCostTotal.WithLabelValues(promLabelValues...).Add(energy.BilledCostUSD)
+					}
+				}
+			}
 
 			// Record cache hits with cache type
 			extraFields := result.GetExtraFields()

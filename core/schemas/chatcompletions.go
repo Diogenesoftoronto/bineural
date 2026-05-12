@@ -1495,6 +1495,7 @@ type BifrostLLMUsage struct {
 	CompletionTokensDetails *ChatCompletionTokensDetails `json:"completion_tokens_details,omitempty"`
 	TotalTokens             int                          `json:"total_tokens"`
 	Cost                    *BifrostCost                 `json:"cost,omitempty"` // Only for the providers which support cost calculation
+	Energy                  *EnergyConsumption           `json:"energy,omitempty"`
 }
 
 type ChatPromptTokensDetails struct {
@@ -1581,6 +1582,21 @@ type BifrostCost struct {
 	SearchQueriesCost   float64 `json:"search_queries_cost,omitempty"`
 	RequestCost         float64 `json:"request_cost,omitempty"`
 	TotalCost           float64 `json:"total_cost,omitempty"`
+}
+
+// EnergyConsumption represents energy and actual-cost data reported by providers
+// (e.g., Neuralwatt SSE comments). All fields are optional since not all providers expose this data.
+type EnergyConsumption struct {
+	EnergyJoules         float64 `json:"energy_joules,omitempty"`
+	EnergyKWh            float64 `json:"energy_kwh,omitempty"`
+	AvgPowerWatts        float64 `json:"avg_power_watts,omitempty"`
+	DurationSeconds      float64 `json:"duration_seconds,omitempty"`
+	AttributionMethod    string  `json:"attribution_method,omitempty"`
+	AttributionRatio     float64 `json:"attribution_ratio,omitempty"`
+	BilledCostUSD        float64 `json:"billed_cost_usd,omitempty"`
+	CacheSavingsUSD      float64 `json:"cache_savings_usd,omitempty"`
+	AllowanceRemainingUSD float64 `json:"allowance_remaining_usd,omitempty"`
+	BudgetRemainingUSD   float64 `json:"budget_remaining_usd,omitempty"`
 }
 
 // UnmarshalJSON implements custom JSON unmarshalling for BifrostCost.

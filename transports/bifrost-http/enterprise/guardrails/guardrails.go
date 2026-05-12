@@ -80,13 +80,17 @@ type GuardrailResult struct {
 	MaskedText string      `json:"masked_text,omitempty"`
 }
 
+// ViolationCallback is called when a guardrail violation is detected.
+type ViolationCallback func(violation *Violation, contentType string)
+
 // GuardrailsPlugin implements content safety guardrails
 type GuardrailsPlugin struct {
-	mu        sync.RWMutex
-	rules     map[string]*Rule
-	profiles  map[string]*Profile
-	enabled   bool
-	logger    schemas.Logger
+	mu                 sync.RWMutex
+	rules              map[string]*Rule
+	profiles           map[string]*Profile
+	enabled            bool
+	logger             schemas.Logger
+	violationCallbacks []ViolationCallback
 }
 
 // Init initializes the guardrails plugin
@@ -116,6 +120,22 @@ func Init(config any, logger schemas.Logger) *GuardrailsPlugin {
 
 func (p *GuardrailsPlugin) GetName() string { return PluginName }
 func (p *GuardrailsPlugin) Cleanup() error  { return nil }
+
+// OnViolation registers a callback that fires whenever a guardrail violation is detected.
+func (p *GuardrailsPlugin) OnViolation(cb ViolationCallback) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.violationCallbacks = append(p.violationCallbacks, cb)
+}
+
+func (p *GuardrailsPlugin) fireViolationCallbacks(violation *Violation, contentType string) {
+	p.mu.RLock()
+	callbacks := p.violationCallbacks
+	p.mu.RUnlock()
+	for _, cb := range callbacks {
+		cb(violation, contentType)
+	}
+}
 
 // AddRule adds a compiled rule
 func (p *GuardrailsPlugin) AddRule(rule *Rule) error {
@@ -195,6 +215,9 @@ func (p *GuardrailsPlugin) Evaluate(content string, contentType string) Guardrai
 				Matched:  matched,
 			}
 			result.Violations = append(result.Violations, v)
+
+			// Fire violation callbacks for integration (e.g., audit logging)
+			p.fireViolationCallbacks(&v, contentType)
 
 			if rule.Action == ActionBlock {
 				result.Allowed = false
@@ -287,17 +310,16 @@ func (p *GuardrailsPlugin) PostLLMHook(ctx *schemas.BifrostContext, resp *schema
 }
 
 func detectPII(text string) string {
-	// Simple PII patterns
 	patterns := map[string]*regexp.Regexp{
-		"email":    regexp.MustCompile(`[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}`),
-		"ssn":      regexp.MustCompile(`\b\d{3}-\d{2}-\d{4}\b`),
-		"phone":    regexp.MustCompile(`\b\d{3}-\d{3}-\d{4}\b`),
-		"credit":   regexp.MustCompile(`\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b`),
+		"email":  regexp.MustCompile(`[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}`),
+		"ssn":    regexp.MustCompile(`\b\d{3}-\d{2}-\d{4}\b`),
+		"phone":  regexp.MustCompile(`\b\d{3}-\d{3}-\d{4}\b`),
+		"credit": regexp.MustCompile(`\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b`),
 	}
 
-	for name, re := range patterns {
-		if re.MatchString(text) {
-			return name
+	for _, re := range patterns {
+		if match := re.FindString(text); match != "" {
+			return match
 		}
 	}
 	return ""

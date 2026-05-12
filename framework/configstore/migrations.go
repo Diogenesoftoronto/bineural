@@ -632,6 +632,18 @@ func triggerMigrations(ctx context.Context, db *gorm.DB) error {
 	if err := migrationAddAllowPerRequestRawOverrideColumn(ctx, db); err != nil {
 		return err
 	}
+	if err := migrationAddSubscriptionTables(ctx, db); err != nil {
+		return err
+	}
+	if err := migrationAddRBACTables(ctx, db); err != nil {
+		return err
+	}
+	if err := migrationAddGuardrailsTables(ctx, db); err != nil {
+		return err
+	}
+	if err := migrationAddSSOTables(ctx, db); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -7245,6 +7257,130 @@ func migrationSplitMCPExternalBaseURL(ctx context.Context, db *gorm.DB) error {
 	}})
 	if err := m.Migrate(); err != nil {
 		return fmt.Errorf("error running split_mcp_external_base_url_into_server_client migration: %s", err.Error())
+	}
+	return nil
+}
+
+// migrationAddSubscriptionTables creates the subscription and billing tables.
+func migrationAddSubscriptionTables(ctx context.Context, db *gorm.DB) error {
+	m := migrator.New(db, migrator.DefaultOptions, []*migrator.Migration{{
+		ID: "add_subscription_tables",
+		Migrate: func(tx *gorm.DB) error {
+			tx = tx.WithContext(ctx)
+			mg := tx.Migrator()
+			if !mg.HasTable(&tables.TableProviderSubscription{}) {
+				if err := mg.CreateTable(&tables.TableProviderSubscription{}); err != nil {
+					return fmt.Errorf("failed to create governance_provider_subscriptions table: %w", err)
+				}
+			}
+			if !mg.HasTable(&tables.TableSaaSBillingTier{}) {
+				if err := mg.CreateTable(&tables.TableSaaSBillingTier{}); err != nil {
+					return fmt.Errorf("failed to create governance_saas_billing_tiers table: %w", err)
+				}
+			}
+			if !mg.HasTable(&tables.TableUserSubscription{}) {
+				if err := mg.CreateTable(&tables.TableUserSubscription{}); err != nil {
+					return fmt.Errorf("failed to create governance_user_subscriptions table: %w", err)
+				}
+			}
+			return nil
+		},
+	}})
+	if err := m.Migrate(); err != nil {
+		return fmt.Errorf("error running add_subscription_tables migration: %s", err.Error())
+	}
+	return nil
+}
+
+// migrationAddRBACTables creates the RBAC tables for role-based access control persistence.
+func migrationAddRBACTables(ctx context.Context, db *gorm.DB) error {
+	m := migrator.New(db, migrator.DefaultOptions, []*migrator.Migration{{
+		ID: "add_rbac_tables",
+		Migrate: func(tx *gorm.DB) error {
+			tx = tx.WithContext(ctx)
+			mg := tx.Migrator()
+			if !mg.HasTable(&tables.TableRBACRole{}) {
+				if err := mg.CreateTable(&tables.TableRBACRole{}); err != nil {
+					return fmt.Errorf("failed to create governance_rbac_roles table: %w", err)
+				}
+			}
+			if !mg.HasTable(&tables.TableRBACPermission{}) {
+				if err := mg.CreateTable(&tables.TableRBACPermission{}); err != nil {
+					return fmt.Errorf("failed to create governance_rbac_permissions table: %w", err)
+				}
+			}
+			if !mg.HasTable(&tables.TableRBACRolePermission{}) {
+				if err := mg.CreateTable(&tables.TableRBACRolePermission{}); err != nil {
+					return fmt.Errorf("failed to create governance_rbac_role_permissions table: %w", err)
+				}
+			}
+			if !mg.HasTable(&tables.TableRBACRoleAssignment{}) {
+				if err := mg.CreateTable(&tables.TableRBACRoleAssignment{}); err != nil {
+					return fmt.Errorf("failed to create governance_rbac_role_assignments table: %w", err)
+				}
+			}
+			return nil
+		},
+	}})
+	if err := m.Migrate(); err != nil {
+		return fmt.Errorf("error running add_rbac_tables migration: %s", err.Error())
+	}
+	return nil
+}
+
+// migrationAddGuardrailsTables creates the guardrails tables for rule and profile persistence.
+func migrationAddGuardrailsTables(ctx context.Context, db *gorm.DB) error {
+	m := migrator.New(db, migrator.DefaultOptions, []*migrator.Migration{{
+		ID: "add_guardrails_tables",
+		Migrate: func(tx *gorm.DB) error {
+			tx = tx.WithContext(ctx)
+			mg := tx.Migrator()
+			if !mg.HasTable(&tables.TableGuardrailRule{}) {
+				if err := mg.CreateTable(&tables.TableGuardrailRule{}); err != nil {
+					return fmt.Errorf("failed to create governance_guardrail_rules table: %w", err)
+				}
+			}
+			if !mg.HasTable(&tables.TableGuardrailProfile{}) {
+				if err := mg.CreateTable(&tables.TableGuardrailProfile{}); err != nil {
+					return fmt.Errorf("failed to create governance_guardrail_profiles table: %w", err)
+				}
+			}
+			if !mg.HasTable(&tables.TableGuardrailProfileRule{}) {
+				if err := mg.CreateTable(&tables.TableGuardrailProfileRule{}); err != nil {
+					return fmt.Errorf("failed to create governance_guardrail_profile_rules table: %w", err)
+				}
+			}
+			return nil
+		},
+	}})
+	if err := m.Migrate(); err != nil {
+		return fmt.Errorf("error running add_guardrails_tables migration: %s", err.Error())
+	}
+	return nil
+}
+
+// migrationAddSSOTables creates the SSO tables for provider and session persistence.
+func migrationAddSSOTables(ctx context.Context, db *gorm.DB) error {
+	m := migrator.New(db, migrator.DefaultOptions, []*migrator.Migration{{
+		ID: "add_sso_tables",
+		Migrate: func(tx *gorm.DB) error {
+			tx = tx.WithContext(ctx)
+			mg := tx.Migrator()
+			if !mg.HasTable(&tables.TableSSOProvider{}) {
+				if err := mg.CreateTable(&tables.TableSSOProvider{}); err != nil {
+					return fmt.Errorf("failed to create governance_sso_providers table: %w", err)
+				}
+			}
+			if !mg.HasTable(&tables.TableSSOSession{}) {
+				if err := mg.CreateTable(&tables.TableSSOSession{}); err != nil {
+					return fmt.Errorf("failed to create governance_sso_sessions table: %w", err)
+				}
+			}
+			return nil
+		},
+	}})
+	if err := m.Migrate(); err != nil {
+		return fmt.Errorf("error running add_sso_tables migration: %s", err.Error())
 	}
 	return nil
 }

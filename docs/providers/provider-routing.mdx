@@ -9,7 +9,7 @@ icon: "route"
 Bifrost offers two powerful methods for routing requests across AI providers, each serving different use cases:
 
 1. **Governance-based Routing**: Explicit, user-defined routing rules configured via Virtual Keys
-2. **Adaptive Load Balancing**: Automatic, performance-based routing powered by real-time metrics (Enterprise feature)
+2. **Adaptive Load Balancing**: Automatic, performance-based routing powered by real-time metrics (requires `enable_enterprise: true`)
 
 When both methods are available, **governance takes precedence** because users have explicitly defined their routing preferences through provider configurations on Virtual Keys.
 
@@ -37,7 +37,7 @@ The Model Catalog is Bifrost's central registry that tracks which models are ava
 The Model Catalog combines two data sources to maintain a comprehensive and up-to-date model registry:
 
 1. **Pricing Data** (Primary source)
-   - Downloaded from a remote URL (configurable, defaults to `https://getbifrost.ai/datasheet`)
+   - Downloaded from a remote URL (configurable, defaults to `https://raw.githubusercontent.com/maximhq/bifrost/main/pricing/datasheet.json`)
    - Contains model names, pricing tiers, and provider mappings
    - Synced to database on startup and refreshed periodically (default: every 24 hours)
    - Used for cost calculation and initial model-to-provider mapping
@@ -1022,9 +1022,7 @@ When a Virtual Key has `provider_configs` defined:
 ## Adaptive Load Balancing
 
 <Info>
-  **Enterprise Feature**: Adaptive Load Balancing is available in Bifrost
-  Enterprise. [Contact us](https://www.getmaxim.ai/bifrost/enterprise) to enable
-  it.
+  Adaptive Load Balancing is available when `enable_enterprise: true` is set in your `config.json`.
 </Info>
 
 Adaptive Load Balancing automatically optimizes routing based on real-time performance metrics. It operates at **two levels** to provide both macro-level provider selection and micro-level key optimization.

@@ -849,7 +849,7 @@ kubectl get secret bifrost -o yaml
 
 ## Resources
 
-- [Bifrost Documentation](https://docs.getbifrost.ai)
+- [Bifrost Documentation](https://github.com/maximhq/bifrost)
 - [GitHub Repository](https://github.com/maximhq/bifrost)
 - [Docker Hub](https://hub.docker.com/r/maximhq/bifrost)
 - [Discord Community](https://discord.gg/exN5KAydbU)

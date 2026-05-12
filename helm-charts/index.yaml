@@ -6,14 +6,14 @@ entries:
       created: "2026-04-30T12:30:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getbifrost.ai/favicon.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://raw.githubusercontent.com/maximhq/bifrost/main/docs/assets/bifrost-logo.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: support@getbifrost.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -27,14 +27,14 @@ entries:
       created: "2026-04-29T18:30:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getbifrost.ai/favicon.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://raw.githubusercontent.com/maximhq/bifrost/main/docs/assets/bifrost-logo.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: support@getbifrost.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -48,14 +48,14 @@ entries:
       created: "2026-04-29T18:30:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getbifrost.ai/favicon.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://raw.githubusercontent.com/maximhq/bifrost/main/docs/assets/bifrost-logo.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: support@getbifrost.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -69,14 +69,14 @@ entries:
       created: "2026-04-28T18:30:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getbifrost.ai/favicon.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://raw.githubusercontent.com/maximhq/bifrost/main/docs/assets/bifrost-logo.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: support@getbifrost.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -90,14 +90,14 @@ entries:
       created: "2026-04-26T12:40:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getbifrost.ai/favicon.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://raw.githubusercontent.com/maximhq/bifrost/main/docs/assets/bifrost-logo.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: support@getbifrost.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -111,14 +111,14 @@ entries:
       created: "2026-04-24T15:00:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getbifrost.ai/favicon.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://raw.githubusercontent.com/maximhq/bifrost/main/docs/assets/bifrost-logo.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: support@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -132,14 +132,14 @@ entries:
       created: "2026-04-24T12:00:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getbifrost.ai/favicon.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://raw.githubusercontent.com/maximhq/bifrost/main/docs/assets/bifrost-logo.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: support@getbifrost.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -153,14 +153,14 @@ entries:
       created: "2026-04-21T12:00:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getbifrost.ai/favicon.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://raw.githubusercontent.com/maximhq/bifrost/main/docs/assets/bifrost-logo.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: support@getbifrost.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -174,14 +174,14 @@ entries:
       created: "2026-04-15T12:00:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -195,14 +195,14 @@ entries:
       created: "2026-04-13T12:00:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -216,14 +216,14 @@ entries:
       created: "2026-04-08T12:00:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -237,14 +237,14 @@ entries:
       created: "2026-04-08T12:00:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -258,14 +258,14 @@ entries:
       created: "2026-04-07T12:00:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -279,14 +279,14 @@ entries:
       created: "2026-03-20T12:00:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -300,14 +300,14 @@ entries:
       created: "2026-03-11T12:00:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -321,14 +321,14 @@ entries:
       created: "2026-03-06T12:00:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -342,14 +342,14 @@ entries:
       created: "2026-03-05T12:00:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -363,14 +363,14 @@ entries:
       created: "2026-03-03T12:00:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -384,14 +384,14 @@ entries:
       created: "2026-02-26T12:00:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -405,14 +405,14 @@ entries:
       created: "2026-02-19T12:00:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -426,14 +426,14 @@ entries:
       created: "2026-02-17T12:00:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -447,14 +447,14 @@ entries:
       created: "2026-02-17T12:00:00.000000+00:00"
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -469,14 +469,14 @@ entries:
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface
         for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -491,14 +491,14 @@ entries:
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface
         for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -513,14 +513,14 @@ entries:
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface
         for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -535,14 +535,14 @@ entries:
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface
         for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -557,14 +557,14 @@ entries:
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface
         for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -579,14 +579,14 @@ entries:
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface
         for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -601,14 +601,14 @@ entries:
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface
         for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -623,14 +623,14 @@ entries:
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface
         for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -645,14 +645,14 @@ entries:
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface
         for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -667,14 +667,14 @@ entries:
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface
         for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -689,14 +689,14 @@ entries:
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface
         for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -711,14 +711,14 @@ entries:
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface
         for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -733,14 +733,14 @@ entries:
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface
         for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -755,14 +755,14 @@ entries:
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface
         for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -777,14 +777,14 @@ entries:
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface
         for multiple providers
       digest: ""
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
         - llm
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:
@@ -799,8 +799,8 @@ entries:
       description: A Helm chart for deploying Bifrost - AI Gateway with unified interface
         for multiple providers
       digest: 6e5b4339411070149533006533529840664282c0e40897b589189841c6580331
-      home: https://www.getmaxim.ai/bifrost
-      icon: https://www.getmaxim.ai/bifrost/bifrost-logo-only.png
+      home: https://github.com/maximhq/bifrost
+      icon: https://github.com/maximhq/bifrost/bifrost-logo-only.png
       keywords:
         - ai
         - gateway
@@ -808,7 +808,7 @@ entries:
         - openai
         - anthropic
       maintainers:
-        - email: akshay@getmaxim.ai
+        - email: bifrost-community@users.noreply.github.com
           name: Bifrost Team
       name: bifrost
       sources:

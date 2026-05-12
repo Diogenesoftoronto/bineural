@@ -166,6 +166,8 @@ export const baseApi = createApi({
 		"BusinessUnits",
 		"PromptDeployments",
 		"AuthType",
+		"VirtualKeyUsers",
+		"LargePayload",
 	],
 	endpoints: () => ({}),
 });

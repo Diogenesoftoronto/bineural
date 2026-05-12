@@ -575,6 +575,12 @@ func (s *RDBLogStore) GetSessionSummary(ctx context.Context, sessionID string) (
 		}
 	}
 
+	// Compute average tokens per second (TPS) across the session.
+	avgTPS := 0.0
+	if durationMs > 0 && totalTokens > 0 {
+		avgTPS = float64(totalTokens) / (float64(durationMs) / 1000.0)
+	}
+
 	return &SessionSummaryResult{
 		SessionID:   sessionID,
 		Count:       count,
@@ -583,6 +589,7 @@ func (s *RDBLogStore) GetSessionSummary(ctx context.Context, sessionID string) (
 		StartedAt:   startedAt,
 		LatestAt:    latestAt,
 		DurationMs:  durationMs,
+		AvgTPS:      avgTPS,
 	}, nil
 }
 
@@ -3603,4 +3610,130 @@ func (s *RDBLogStore) DeleteStaleAsyncJobs(ctx context.Context, staleSince time.
 		Where("status = ? AND created_at < ?", "processing", staleSince).
 		Delete(&AsyncJob{})
 	return result.RowsAffected, result.Error
+}
+
+// --- Audit methods ---
+
+// CreateAuditEntry inserts a new audit entry into the database.
+func (s *RDBLogStore) CreateAuditEntry(ctx context.Context, entry *AuditEntry) error {
+	return s.db.WithContext(ctx).Create(entry).Error
+}
+
+// applyAuditFilters applies AuditFilter fields to a GORM query.
+func (s *RDBLogStore) applyAuditFilters(baseQuery *gorm.DB, filter AuditFilter) *gorm.DB {
+	if filter.EventType != "" {
+		baseQuery = baseQuery.Where("event_type = ?", filter.EventType)
+	}
+	if filter.UserID != "" {
+		baseQuery = baseQuery.Where("user_id = ?", filter.UserID)
+	}
+	if filter.Resource != "" {
+		baseQuery = baseQuery.Where("resource = ?", filter.Resource)
+	}
+	if filter.StartTime != nil {
+		baseQuery = baseQuery.Where("timestamp >= ?", *filter.StartTime)
+	}
+	if filter.EndTime != nil {
+		baseQuery = baseQuery.Where("timestamp <= ?", *filter.EndTime)
+	}
+	return baseQuery
+}
+
+// GetAuditEntries retrieves audit entries matching the given filter with pagination.
+// Returns the entries, total count of matching records, and any error.
+func (s *RDBLogStore) GetAuditEntries(ctx context.Context, filter AuditFilter) ([]AuditEntry, int, error) {
+	limit := filter.Limit
+	if limit <= 0 || limit > defaultMaxSearchLimit {
+		limit = defaultMaxSearchLimit
+	}
+
+	var (
+		totalCount int64
+		entries    []AuditEntry
+	)
+
+	g, gCtx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		countQuery := s.db.WithContext(gCtx).Model(&AuditEntry{})
+		countQuery = s.applyAuditFilters(countQuery, filter)
+		return countQuery.Count(&totalCount).Error
+	})
+
+	g.Go(func() error {
+		dataQuery := s.db.WithContext(gCtx).Model(&AuditEntry{})
+		dataQuery = s.applyAuditFilters(dataQuery, filter)
+		dataQuery = dataQuery.Order("timestamp DESC").Limit(limit)
+		if filter.Offset > 0 {
+			dataQuery = dataQuery.Offset(filter.Offset)
+		}
+		err := dataQuery.Find(&entries).Error
+		if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil, 0, err
+	}
+
+	return entries, int(totalCount), nil
+}
+
+// GetAuditEntryByID retrieves a single audit entry by its EventID.
+func (s *RDBLogStore) GetAuditEntryByID(ctx context.Context, id string) (*AuditEntry, error) {
+	var entry AuditEntry
+	result := s.db.WithContext(ctx).Where("event_id = ?", id).First(&entry)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, result.Error
+	}
+	return &entry, nil
+}
+
+// GetAuditEntriesByUser retrieves audit entries for a specific user with pagination.
+func (s *RDBLogStore) GetAuditEntriesByUser(ctx context.Context, userID string, limit, offset int) ([]AuditEntry, error) {
+	if limit <= 0 || limit > defaultMaxSearchLimit {
+		limit = defaultMaxSearchLimit
+	}
+
+	var entries []AuditEntry
+	query := s.db.WithContext(ctx).Where("user_id = ?", userID).
+		Order("timestamp DESC").Limit(limit)
+	if offset > 0 {
+		query = query.Offset(offset)
+	}
+	err := query.Find(&entries).Error
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return entries, err
+}
+
+// GetAuditEntriesByType retrieves audit entries for a specific event type with pagination.
+func (s *RDBLogStore) GetAuditEntriesByType(ctx context.Context, eventType string, limit, offset int) ([]AuditEntry, error) {
+	if limit <= 0 || limit > defaultMaxSearchLimit {
+		limit = defaultMaxSearchLimit
+	}
+
+	var entries []AuditEntry
+	query := s.db.WithContext(ctx).Where("event_type = ?", eventType).
+		Order("timestamp DESC").Limit(limit)
+	if offset > 0 {
+		query = query.Offset(offset)
+	}
+	err := query.Find(&entries).Error
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return entries, err
+}
+
+// DeleteAuditEntriesBefore deletes all audit entries with a timestamp before the given time.
+// Used for TTL-based cleanup of old audit records.
+func (s *RDBLogStore) DeleteAuditEntriesBefore(ctx context.Context, before time.Time) error {
+	return s.db.WithContext(ctx).Where("timestamp < ?", before).Delete(&AuditEntry{}).Error
 }

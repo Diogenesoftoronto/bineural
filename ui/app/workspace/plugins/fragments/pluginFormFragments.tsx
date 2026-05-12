@@ -30,7 +30,7 @@ export function PluginFormFragment({ form, isEditMode = false }: PluginFormFragm
 						? "Update your plugin configuration. Plugin name and path are read-only."
 						: "Install a custom plugin by providing an absolute file path or HTTP URL accessible to Bifrost deployment (.so)."}{" "}
 					<a
-						href="https://docs.getbifrost.ai/plugins"
+						href="https://github.com/maximhq/bifrost/wikis"
 						target="_blank"
 						rel="noopener noreferrer"
 						className="text-primary hover:underline"

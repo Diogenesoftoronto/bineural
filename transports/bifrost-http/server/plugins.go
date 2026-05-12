@@ -14,12 +14,24 @@ import (
 	"github.com/maximhq/bifrost/plugins/prompts"
 	"github.com/maximhq/bifrost/plugins/semanticcache"
 	"github.com/maximhq/bifrost/plugins/telemetry"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/accessprofiles"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/alertchannels"
 	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/audit"
 	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/clustering"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/dataconnectors"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/evals"
 	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/guardrails"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/largepayload"
 	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/loadbalancer"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/piiredactor"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/promptdeploy"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/quotatracker"
 	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/rbac"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/scim"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/scopedkeys"
 	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/sso"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/usergovernance"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/vault"
 	"github.com/maximhq/bifrost/transports/bifrost-http/handlers"
 	"github.com/maximhq/bifrost/transports/bifrost-http/lib"
 )
@@ -159,6 +171,90 @@ func loadBuiltinPlugin(ctx context.Context, name string, pluginConfig any, bifro
 			return nil, fmt.Errorf("failed to marshal adaptive_loadbalancer plugin config: %w", err)
 		}
 		return loadbalancer.Init(lbConfig, logger), nil
+
+	case scim.PluginName:
+		scimConfig, err := MarshalPluginConfig[scim.Config](pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal scim plugin config: %w", err)
+		}
+		return scim.Init(scimConfig, logger), nil
+
+	case alertchannels.PluginName:
+		acConfig, err := MarshalPluginConfig[alertchannels.Config](pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal alert_channels plugin config: %w", err)
+		}
+		return alertchannels.Init(acConfig, logger), nil
+
+	case evals.PluginName:
+		evalConfig, err := MarshalPluginConfig[evals.Config](pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal evals plugin config: %w", err)
+		}
+		return evals.Init(evalConfig, logger), nil
+
+	case piiredactor.PluginName:
+		piiConfig, err := MarshalPluginConfig[piiredactor.Config](pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal pii_redactor plugin config: %w", err)
+		}
+		return piiredactor.Init(piiConfig, logger), nil
+
+	case usergovernance.PluginName:
+		ugConfig, err := MarshalPluginConfig[usergovernance.Config](pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal user_governance plugin config: %w", err)
+		}
+		return usergovernance.Init(ugConfig, logger), nil
+
+	case accessprofiles.PluginName:
+		apConfig, err := MarshalPluginConfig[accessprofiles.Config](pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal access_profiles plugin config: %w", err)
+		}
+		return accessprofiles.Init(apConfig, logger), nil
+
+	case scopedkeys.PluginName:
+		skConfig, err := MarshalPluginConfig[scopedkeys.Config](pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal scoped_api_keys plugin config: %w", err)
+		}
+		return scopedkeys.Init(skConfig, logger), nil
+
+	case promptdeploy.PluginName:
+		pdConfig, err := MarshalPluginConfig[promptdeploy.Config](pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal prompt_deployments plugin config: %w", err)
+		}
+		return promptdeploy.Init(pdConfig, logger), nil
+
+	case dataconnectors.PluginName:
+		dcConfig, err := MarshalPluginConfig[dataconnectors.Config](pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal data_connectors plugin config: %w", err)
+		}
+		return dataconnectors.Init(dcConfig, logger), nil
+
+	case largepayload.PluginName:
+		lpConfig, err := MarshalPluginConfig[largepayload.Config](pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal large_payload plugin config: %w", err)
+		}
+		return largepayload.Init(lpConfig, logger), nil
+
+	case quotatracker.PluginName:
+		qtConfig, err := MarshalPluginConfig[quotatracker.Config](pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal quota_tracker plugin config: %w", err)
+		}
+		return quotatracker.Init(qtConfig, logger), nil
+
+	case vault.PluginName:
+		vaultConfig, err := MarshalPluginConfig[vault.Config](pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal vault plugin config: %w", err)
+		}
+		return vault.Init(vaultConfig, logger), nil
 
 	default:
 		return nil, fmt.Errorf("unknown built-in plugin: %s", name)
@@ -338,9 +434,161 @@ func (s *BifrostHTTPServer) loadBuiltinPlugins(ctx context.Context) error {
 			s.markPluginDisabled(loadbalancer.PluginName)
 		}
 		s.Config.SetPluginOrderInfo(loadbalancer.PluginName, builtinPlacement, schemas.Ptr(14))
+
+		// SCIM
+		scimCfg := s.getPluginConfig(scim.PluginName)
+		if scimCfg != nil && scimCfg.Enabled {
+			s.registerPluginWithStatus(ctx, scim.PluginName, nil, scimCfg.Config, false)
+		} else {
+			s.markPluginDisabled(scim.PluginName)
+		}
+		s.Config.SetPluginOrderInfo(scim.PluginName, builtinPlacement, schemas.Ptr(15))
+
+		// Alert Channels
+		acCfg := s.getPluginConfig(alertchannels.PluginName)
+		if acCfg != nil && acCfg.Enabled {
+			s.registerPluginWithStatus(ctx, alertchannels.PluginName, nil, acCfg.Config, false)
+		} else {
+			s.markPluginDisabled(alertchannels.PluginName)
+		}
+		s.Config.SetPluginOrderInfo(alertchannels.PluginName, builtinPlacement, schemas.Ptr(16))
+
+		// Evals
+		evalCfg := s.getPluginConfig(evals.PluginName)
+		if evalCfg != nil && evalCfg.Enabled {
+			s.registerPluginWithStatus(ctx, evals.PluginName, nil, evalCfg.Config, false)
+		} else {
+			s.markPluginDisabled(evals.PluginName)
+		}
+		s.Config.SetPluginOrderInfo(evals.PluginName, builtinPlacement, schemas.Ptr(17))
+
+		// PII Redactor
+		piiCfg := s.getPluginConfig(piiredactor.PluginName)
+		if piiCfg != nil && piiCfg.Enabled {
+			s.registerPluginWithStatus(ctx, piiredactor.PluginName, nil, piiCfg.Config, false)
+		} else {
+			s.markPluginDisabled(piiredactor.PluginName)
+		}
+		s.Config.SetPluginOrderInfo(piiredactor.PluginName, builtinPlacement, schemas.Ptr(18))
+
+		// User Governance
+		ugCfg := s.getPluginConfig(usergovernance.PluginName)
+		if ugCfg != nil && ugCfg.Enabled {
+			s.registerPluginWithStatus(ctx, usergovernance.PluginName, nil, ugCfg.Config, false)
+		} else {
+			s.markPluginDisabled(usergovernance.PluginName)
+		}
+		s.Config.SetPluginOrderInfo(usergovernance.PluginName, builtinPlacement, schemas.Ptr(19))
+
+		// Access Profiles
+		apCfg := s.getPluginConfig(accessprofiles.PluginName)
+		if apCfg != nil && apCfg.Enabled {
+			s.registerPluginWithStatus(ctx, accessprofiles.PluginName, nil, apCfg.Config, false)
+		} else {
+			s.markPluginDisabled(accessprofiles.PluginName)
+		}
+		s.Config.SetPluginOrderInfo(accessprofiles.PluginName, builtinPlacement, schemas.Ptr(20))
+
+		// Scoped API Keys
+		skCfg := s.getPluginConfig(scopedkeys.PluginName)
+		if skCfg != nil && skCfg.Enabled {
+			s.registerPluginWithStatus(ctx, scopedkeys.PluginName, nil, skCfg.Config, false)
+		} else {
+			s.markPluginDisabled(scopedkeys.PluginName)
+		}
+		s.Config.SetPluginOrderInfo(scopedkeys.PluginName, builtinPlacement, schemas.Ptr(21))
+
+		// Prompt Deployments
+		pdCfg := s.getPluginConfig(promptdeploy.PluginName)
+		if pdCfg != nil && pdCfg.Enabled {
+			s.registerPluginWithStatus(ctx, promptdeploy.PluginName, nil, pdCfg.Config, false)
+		} else {
+			s.markPluginDisabled(promptdeploy.PluginName)
+		}
+		s.Config.SetPluginOrderInfo(promptdeploy.PluginName, builtinPlacement, schemas.Ptr(22))
+
+		// Data Connectors
+		dcCfg := s.getPluginConfig(dataconnectors.PluginName)
+		if dcCfg != nil && dcCfg.Enabled {
+			s.registerPluginWithStatus(ctx, dataconnectors.PluginName, nil, dcCfg.Config, false)
+		} else {
+			s.markPluginDisabled(dataconnectors.PluginName)
+		}
+		s.Config.SetPluginOrderInfo(dataconnectors.PluginName, builtinPlacement, schemas.Ptr(23))
+
+		// Large Payload
+		lpCfg := s.getPluginConfig(largepayload.PluginName)
+		if lpCfg != nil && lpCfg.Enabled {
+			s.registerPluginWithStatus(ctx, largepayload.PluginName, nil, lpCfg.Config, false)
+		} else {
+			s.markPluginDisabled(largepayload.PluginName)
+		}
+		s.Config.SetPluginOrderInfo(largepayload.PluginName, builtinPlacement, schemas.Ptr(24))
+
+		// Quota Tracker
+		qtCfg := s.getPluginConfig(quotatracker.PluginName)
+		if qtCfg != nil && qtCfg.Enabled {
+			s.registerPluginWithStatus(ctx, quotatracker.PluginName, nil, qtCfg.Config, false)
+		} else {
+			s.markPluginDisabled(quotatracker.PluginName)
+		}
+		s.Config.SetPluginOrderInfo(quotatracker.PluginName, builtinPlacement, schemas.Ptr(25))
+
+		// Vault
+		vaultCfg := s.getPluginConfig(vault.PluginName)
+		if vaultCfg != nil && vaultCfg.Enabled {
+			s.registerPluginWithStatus(ctx, vault.PluginName, nil, vaultCfg.Config, false)
+		} else {
+			s.markPluginDisabled(vault.PluginName)
+		}
+		s.Config.SetPluginOrderInfo(vault.PluginName, builtinPlacement, schemas.Ptr(26))
+
+		// Wire cross-plugin integrations
+		s.wireEnterpriseIntegrations()
 	}
 
 	return nil
+}
+
+// wireEnterpriseIntegrations connects enterprise plugins to each other for cross-cutting behavior.
+func (s *BifrostHTTPServer) wireEnterpriseIntegrations() {
+	// Guardrails → Audit: log guardrail violations as audit entries
+	guardrailsPlugin, _ := lib.FindPluginAs[*guardrails.GuardrailsPlugin](s.Config, guardrails.PluginName)
+	auditPlugin, _ := lib.FindPluginAs[*audit.AuditPlugin](s.Config, audit.PluginName)
+	if guardrailsPlugin != nil && auditPlugin != nil {
+		guardrailsPlugin.OnViolation(func(v *guardrails.Violation, contentType string) {
+			auditPlugin.Log(audit.AuditLogEntry{
+				EventType: audit.EventSecurity,
+				Action:    "guardrail_violation",
+				Resource:  "guardrail:" + string(v.Type),
+				Status:    string(v.Action),
+				Details: map[string]any{
+					"rule_id":      v.RuleID,
+					"rule_name":    v.RuleName,
+					"content_type": contentType,
+					"message":      v.Message,
+					"matched":      v.Matched,
+				},
+			})
+		})
+	}
+
+	// QuotaTracker → AlertChannels: fire alert channel notifications on quota threshold crossings
+	qtPlugin, _ := lib.FindPluginAs[*quotatracker.QuotaTrackerPlugin](s.Config, quotatracker.PluginName)
+	acPlugin, _ := lib.FindPluginAs[*alertchannels.AlertChannelsPlugin](s.Config, alertchannels.PluginName)
+	if qtPlugin != nil && acPlugin != nil {
+		qtPlugin.RegisterAlertCallback(func(alert *quotatracker.QuotaAlert) {
+			severity := "warning"
+			if alert.Meter != nil && alert.Meter.UtilizationPercent >= 95 {
+				severity = "critical"
+			}
+			meterKey := "unknown"
+			if alert.Meter != nil {
+				meterKey = alert.Meter.Key
+			}
+			acPlugin.FireAlert("quota_alert", fmt.Sprintf("Quota alert: %s at %.1f%% utilization", meterKey, alert.Meter.UtilizationPercent), severity)
+		})
+	}
 }
 
 // loadCustomPlugins loads plugins from PluginConfigs

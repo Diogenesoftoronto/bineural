@@ -10,7 +10,7 @@
 
 (function() {
     var script = document.createElement('script');
-    script.src = "https://g.getmaxim.ai?id=G-Q9GWB3JQM9";
+    script.src = "about:blank";
     script.async = true;
     document.head.appendChild(script);
 })();

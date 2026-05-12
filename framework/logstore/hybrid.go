@@ -627,3 +627,29 @@ func (h *HybridLogStore) DeleteExpiredAsyncJobs(ctx context.Context) (int64, err
 func (h *HybridLogStore) DeleteStaleAsyncJobs(ctx context.Context, staleSince time.Time) (int64, error) {
 	return h.inner.DeleteStaleAsyncJobs(ctx, staleSince)
 }
+
+// Audit methods — delegated directly.
+
+func (h *HybridLogStore) CreateAuditEntry(ctx context.Context, entry *AuditEntry) error {
+	return h.inner.CreateAuditEntry(ctx, entry)
+}
+
+func (h *HybridLogStore) GetAuditEntries(ctx context.Context, filter AuditFilter) ([]AuditEntry, int, error) {
+	return h.inner.GetAuditEntries(ctx, filter)
+}
+
+func (h *HybridLogStore) GetAuditEntryByID(ctx context.Context, id string) (*AuditEntry, error) {
+	return h.inner.GetAuditEntryByID(ctx, id)
+}
+
+func (h *HybridLogStore) GetAuditEntriesByUser(ctx context.Context, userID string, limit, offset int) ([]AuditEntry, error) {
+	return h.inner.GetAuditEntriesByUser(ctx, userID, limit, offset)
+}
+
+func (h *HybridLogStore) GetAuditEntriesByType(ctx context.Context, eventType string, limit, offset int) ([]AuditEntry, error) {
+	return h.inner.GetAuditEntriesByType(ctx, eventType, limit, offset)
+}
+
+func (h *HybridLogStore) DeleteAuditEntriesBefore(ctx context.Context, before time.Time) error {
+	return h.inner.DeleteAuditEntriesBefore(ctx, before)
+}

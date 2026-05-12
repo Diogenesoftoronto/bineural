@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	baseURL        = "https://downloads.getmaxim.ai"
+	baseURL        = "https://github.com/maximhq/bifrost/releases/download"
 	versionURL     = baseURL + "/bifrost-cli/latest/version.txt"
 	checkInterval  = 24 * time.Hour
 	requestTimeout = 3 * time.Second

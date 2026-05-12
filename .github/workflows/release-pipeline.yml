@@ -380,7 +380,6 @@ jobs:
             codecov.io:443
             dl-cdn.alpinelinux.org:443
             esm.ubuntu.com:443
-            getbifrost.ai:443
             ghcr.io:443
             github.com:443
             packages.microsoft.com:443
@@ -481,7 +480,6 @@ jobs:
             file.example.com:443
             fonts.googleapis.com:443
             fonts.gstatic.com:443
-            getbifrost.ai:443
             github.com:443
             nodejs.org:443
             production.cloudflare.docker.com:443
@@ -493,7 +491,6 @@ jobs:
             sum.golang.org:443
             telemetry.qdrant.io:443
             uploader.codecov.io:443
-            www.getbifrost.ai:443
 
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -550,8 +547,6 @@ jobs:
             api.github.com:443
             api.openai.com:443
             auth.docker.io:443
-            downloads.getmaxim.ai:443
-            getbifrost.ai:443
             github.com:443
             nodejs.org:443
             production.cloudflare.docker.com:443
@@ -624,11 +619,9 @@ jobs:
             cr.weaviate.io:443
             d3gk2c5xim1je2.cloudfront.net:443
             d4tuoctqmanu0.cloudfront.net:443
-            docs.getbifrost.ai:443
             esm.ubuntu.com:443
             fonts.googleapis.com:443
             fonts.gstatic.com:443
-            getbifrost.ai:443
             github.com:443
             mintcdn.com:443
             nodejs.org:443
@@ -718,7 +711,6 @@ jobs:
             fonts.googleapis.com:443
             fonts.gstatic.com:443
             generativelanguage.googleapis.com:443
-            getbifrost.ai:443
             ghcr.io:443
             github.com:443
             huggingface.co:443
@@ -734,7 +726,6 @@ jobs:
             storage.googleapis.com:443
             sum.golang.org:443
             telemetry.qdrant.io:443
-            www.getbifrost.ai:443
 
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -827,7 +818,6 @@ jobs:
             fonts.googleapis.com:443
             fonts.gstatic.com:443
             generativelanguage.googleapis.com:443
-            getbifrost.ai:443
             ghcr.io:443
             github.com:443
             huggingface.co:443
@@ -843,7 +833,6 @@ jobs:
             storage.googleapis.com:443
             sum.golang.org:443
             telemetry.qdrant.io:443
-            www.getbifrost.ai:443
 
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

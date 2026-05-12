@@ -629,6 +629,7 @@ export interface LogSessionSummaryResponse {
 	started_at?: string;
 	latest_at?: string;
 	duration_ms: number;
+	avg_tps: number;
 }
 
 export interface HistogramBucket {

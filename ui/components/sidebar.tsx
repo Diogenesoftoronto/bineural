@@ -119,29 +119,25 @@ const externalLinks = [
 	},
 	{
 		title: "Full Documentation",
-		url: "https://docs.getbifrost.ai",
+		url: "https://github.com/maximhq/bifrost/wiki",
 		icon: BooksIcon,
 		strokeWidth: 1,
 	},
 ];
 
-// Base promotional card (memoized outside component to prevent recreation)
+// Base informational card
 const productionSetupHelpCard = {
 	id: "production-setup",
-	title: "Need help with production setup?",
+	title: "Enterprise features enabled",
 	description: (
 		<>
-			We offer help with production setup including custom integrations and dedicated support.
-			<br />
-			<br />
-			Book a demo with our team{" "}
+			RBAC, audit logs, guardrails, clustering, SSO, adaptive load balancing, and more
+			are available in this fork. Configure them in{" "}
 			<a
-				href="https://calendly.com/maximai/bifrost-demo?utm_source=bfd_sdbr"
-				target="_blank"
+				href="/workspace/config"
 				className="text-primary font-medium underline"
-				rel="noopener noreferrer"
 			>
-				here
+				Settings
 			</a>
 			.
 		</>
@@ -797,9 +793,8 @@ export default function AppSidebar() {
 				: []),
 			{
 				title: "Evals",
-				url: "https://www.getmaxim.ai",
+				url: "/workspace/evals",
 				icon: FlaskConical,
-				isExternal: true,
 				description: "Evaluations",
 				hasAccess: true,
 			},
@@ -1130,7 +1125,7 @@ export default function AppSidebar() {
 					<div className="flex h-full flex-col gap-2">
 						<img src={newReleaseImage} alt="Bifrost" className="h-[95px] rounded-md object-cover" />
 						<a
-							href={`https://docs.getbifrost.ai/changelogs/${latestRelease.name}`}
+							href={`https://github.com/maximhq/bifrost/wikis/${latestRelease.name}`}
 							target="_blank"
 							rel="noopener noreferrer"
 							className="text-primary mt-auto pb-1 font-medium underline"

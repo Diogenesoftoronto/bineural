@@ -1,16 +1,17 @@
-// OSS build has no SCIM/auth-type backend — return undefined so consumers
-// fall back to showing the password section.
-export const useGetAuthTypeQuery = (
-	_args?: undefined,
-	_opts?: { skip?: boolean },
-): {
-	data: { type: string; provider?: string } | undefined;
-	isLoading: boolean;
-	isError: boolean;
-	error: null;
-} => ({
-	data: undefined,
-	isLoading: false,
-	isError: false,
-	error: null,
+import { baseApi } from "@/lib/store/apis/baseApi";
+
+export interface AuthTypeResponse {
+	type: string;
+	provider?: string;
+}
+
+export const scimApi = baseApi.injectEndpoints({
+	endpoints: (builder) => ({
+		getAuthType: builder.query<AuthTypeResponse, void>({
+			query: () => "/enterprise/sso/auth-type",
+			providesTags: ["AuthType"],
+		}),
+	}),
 });
+
+export const { useGetAuthTypeQuery } = scimApi;

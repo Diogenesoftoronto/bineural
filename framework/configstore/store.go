@@ -415,6 +415,76 @@ type ConfigStore interface {
 
 	// Cleanup
 	Close(ctx context.Context) error
+
+	// Provider Subscription CRUD
+	GetProviderSubscriptions(ctx context.Context) ([]tables.TableProviderSubscription, error)
+	GetProviderSubscription(ctx context.Context, id string) (*tables.TableProviderSubscription, error)
+	GetProviderSubscriptionsByProvider(ctx context.Context, provider string) ([]tables.TableProviderSubscription, error)
+	CreateProviderSubscription(ctx context.Context, subscription *tables.TableProviderSubscription, tx ...*gorm.DB) error
+	UpdateProviderSubscription(ctx context.Context, subscription *tables.TableProviderSubscription, tx ...*gorm.DB) error
+	DeleteProviderSubscription(ctx context.Context, id string) error
+	UpdateProviderSubscriptionSpend(ctx context.Context, id string, additionalSpend float64) error
+
+	// SaaS Billing Tier CRUD
+	GetSaaSBillingTiers(ctx context.Context) ([]tables.TableSaaSBillingTier, error)
+	GetSaaSBillingTier(ctx context.Context, id string) (*tables.TableSaaSBillingTier, error)
+	CreateSaaSBillingTier(ctx context.Context, tier *tables.TableSaaSBillingTier, tx ...*gorm.DB) error
+	UpdateSaaSBillingTier(ctx context.Context, tier *tables.TableSaaSBillingTier, tx ...*gorm.DB) error
+	DeleteSaaSBillingTier(ctx context.Context, id string) error
+
+	// User Subscription CRUD
+	GetUserSubscriptions(ctx context.Context) ([]tables.TableUserSubscription, error)
+	GetUserSubscription(ctx context.Context, id string) (*tables.TableUserSubscription, error)
+	GetUserSubscriptionsByVirtualKeyID(ctx context.Context, virtualKeyID string) ([]tables.TableUserSubscription, error)
+	GetUserSubscriptionsByUserID(ctx context.Context, userID string) ([]tables.TableUserSubscription, error)
+	CreateUserSubscription(ctx context.Context, subscription *tables.TableUserSubscription, tx ...*gorm.DB) error
+	UpdateUserSubscription(ctx context.Context, subscription *tables.TableUserSubscription, tx ...*gorm.DB) error
+	DeleteUserSubscription(ctx context.Context, id string) error
+	UpdateUserSubscriptionUsage(ctx context.Context, id string, additionalSpend float64, additionalTokens int64, additionalRequests int64) error
+
+	// RBAC CRUD
+	CreateRole(ctx context.Context, role *tables.TableRBACRole) error
+	GetRole(ctx context.Context, id string) (*tables.TableRBACRole, error)
+	GetRoleByName(ctx context.Context, name string) (*tables.TableRBACRole, error)
+	ListRoles(ctx context.Context) ([]tables.TableRBACRole, error)
+	UpdateRole(ctx context.Context, role *tables.TableRBACRole) error
+	DeleteRole(ctx context.Context, id string) error
+	CreatePermission(ctx context.Context, permission *tables.TableRBACPermission) error
+	ListPermissions(ctx context.Context) ([]tables.TableRBACPermission, error)
+	DeletePermission(ctx context.Context, id string) error
+	AssignRoleToUser(ctx context.Context, assignment *tables.TableRBACRoleAssignment) error
+	GetUserRoleAssignments(ctx context.Context, userID string) ([]tables.TableRBACRoleAssignment, error)
+	RemoveRoleAssignment(ctx context.Context, id string) error
+	AddPermissionToRole(ctx context.Context, rolePermission *tables.TableRBACRolePermission) error
+	RemovePermissionFromRole(ctx context.Context, roleID, permissionID string) error
+	GetRolePermissions(ctx context.Context, roleID string) ([]tables.TableRBACPermission, error)
+
+	// Guardrails methods
+	CreateGuardrailRule(ctx context.Context, rule *tables.TableGuardrailRule) error
+	GetGuardrailRule(ctx context.Context, id string) (*tables.TableGuardrailRule, error)
+	ListGuardrailRules(ctx context.Context) ([]tables.TableGuardrailRule, error)
+	UpdateGuardrailRule(ctx context.Context, rule *tables.TableGuardrailRule) error
+	DeleteGuardrailRule(ctx context.Context, id string) error
+	CreateGuardrailProfile(ctx context.Context, profile *tables.TableGuardrailProfile) error
+	GetGuardrailProfile(ctx context.Context, id string) (*tables.TableGuardrailProfile, error)
+	ListGuardrailProfiles(ctx context.Context) ([]tables.TableGuardrailProfile, error)
+	UpdateGuardrailProfile(ctx context.Context, profile *tables.TableGuardrailProfile) error
+	DeleteGuardrailProfile(ctx context.Context, id string) error
+	AddRuleToProfile(ctx context.Context, profileRule *tables.TableGuardrailProfileRule) error
+	RemoveRuleFromProfile(ctx context.Context, profileID, ruleID string) error
+	GetProfileRules(ctx context.Context, profileID string) ([]tables.TableGuardrailRule, error)
+
+	// SSO methods
+	CreateSSOProvider(ctx context.Context, provider *tables.TableSSOProvider) error
+	GetSSOProvider(ctx context.Context, id string) (*tables.TableSSOProvider, error)
+	GetSSOProviderByName(ctx context.Context, name string) (*tables.TableSSOProvider, error)
+	ListSSOProviders(ctx context.Context) ([]tables.TableSSOProvider, error)
+	UpdateSSOProvider(ctx context.Context, provider *tables.TableSSOProvider) error
+	DeleteSSOProvider(ctx context.Context, id string) error
+	CreateSSOSession(ctx context.Context, session *tables.TableSSOSession) error
+	GetSSOSessionByState(ctx context.Context, state string) (*tables.TableSSOSession, error)
+	DeleteSSOSession(ctx context.Context, id string) error
+	UpdateSSOSession(ctx context.Context, session *tables.TableSSOSession) error
 }
 
 // NewConfigStore creates a new config store based on the configuration

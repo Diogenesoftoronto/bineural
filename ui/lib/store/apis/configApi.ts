@@ -24,7 +24,7 @@ export const configApi = baseApi.injectEndpoints({
 		getLatestRelease: builder.query<LatestReleaseResponse, void>({
 			queryFn: async (_arg, { signal }) => {
 				try {
-					const response = await axios.get("https://getbifrost.ai/latest-release", {
+					const response = await axios.get("https://api.github.com/repos/maximhq/bifrost/releases/latest", {
 						timeout: 3000, // 3 second timeout
 						signal,
 						headers: {

@@ -2,7 +2,7 @@
 
 Bifrost Gateway is a blazing-fast HTTP API that unifies access to 15+ AI providers (OpenAI, Anthropic, AWS Bedrock, Google Vertex, and more) through a single OpenAI-compatible interface. Deploy in seconds with zero configuration and get automatic fallbacks, semantic caching, tool calling, and enterprise-grade features.
 
-**Complete Documentation**: [https://docs.getbifrost.ai](https://docs.getbifrost.ai)
+**Complete Documentation**: [https://github.com/maximhq/bifrost/wiki
 
 ---
 
@@ -79,29 +79,29 @@ Bifrost Gateway provides enterprise-grade AI infrastructure with these core capa
 
 ### Core Features
 
-- **[Unified Interface](https://docs.getbifrost.ai/features/unified-interface)** - Single OpenAI-compatible API for all providers
-- **[Multi-Provider Support](https://docs.getbifrost.ai/quickstart/gateway/provider-configuration)** - OpenAI, Anthropic, AWS Bedrock, Google Vertex, Cerebras, Azure, Cohere, Mistral, Ollama, Groq, and more
-- **[Drop-in Replacement](https://docs.getbifrost.ai/features/drop-in-replacement)** - Replace OpenAI/Anthropic/GenAI SDKs with zero code changes
-- **[Automatic Fallbacks](https://docs.getbifrost.ai/features/fallbacks)** - Seamless failover between providers and models
-- **[Streaming Support](https://docs.getbifrost.ai/quickstart/gateway/streaming)** - Real-time response streaming for all providers
+- **[Unified Interface](https://github.com/maximhq/bifrost/wiki
+- **[Multi-Provider Support](https://github.com/maximhq/bifrost/wiki
+- **[Drop-in Replacement](https://github.com/maximhq/bifrost/wiki
+- **[Automatic Fallbacks](https://github.com/maximhq/bifrost/wiki
+- **[Streaming Support](https://github.com/maximhq/bifrost/wiki
 
 ### Advanced Features
 
-- **[Model Context Protocol (MCP)](https://docs.getbifrost.ai/features/mcp)** - Enable AI models to use external tools (filesystem, web search, databases)
-- **[Semantic Caching](https://docs.getbifrost.ai/features/semantic-caching)** - Intelligent response caching based on semantic similarity
-- **[Load Balancing](https://docs.getbifrost.ai/features/fallbacks)** - Distribute requests across multiple API keys and providers
-- **[Governance & Budget Management](https://docs.getbifrost.ai/features/governance)** - Usage tracking, rate limiting, and cost control
-- **[Custom Plugins](https://docs.getbifrost.ai/enterprise/custom-plugins)** - Extensible middleware for analytics, monitoring, and custom logic
+- **[Model Context Protocol (MCP)](https://github.com/maximhq/bifrost/wiki
+- **[Semantic Caching](https://github.com/maximhq/bifrost/wiki
+- **[Load Balancing](https://github.com/maximhq/bifrost/wiki
+- **[Governance & Budget Management](https://github.com/maximhq/bifrost/wiki
+- **[Custom Plugins](https://github.com/maximhq/bifrost/wiki
 
 ### Enterprise Features
 
-- **[Clustering](https://docs.getbifrost.ai/enterprise/clustering)** - Multi-node deployment with shared state
-- **[SSO Integration](https://docs.getbifrost.ai/features/sso-with-google-github)** - Google, GitHub authentication
-- **[Vault Support](https://docs.getbifrost.ai/enterprise/vault-support)** - Secure API key management
-- **[Custom Analytics](https://docs.getbifrost.ai/features/observability)** - Detailed usage insights and monitoring
-- **[In-VPC Deployments](https://docs.getbifrost.ai/enterprise/invpc-deployments)** - Private cloud deployment options
+- **[Clustering](https://github.com/maximhq/bifrost/wiki
+- **[SSO Integration](https://github.com/maximhq/bifrost/wiki
+- **[Vault Support](https://github.com/maximhq/bifrost/wiki
+- **[Custom Analytics](https://github.com/maximhq/bifrost/wiki
+- **[In-VPC Deployments](https://github.com/maximhq/bifrost/wiki
 
-**Learn More**: [Complete Feature Documentation](https://docs.getbifrost.ai/features/unified-interface)
+**Learn More**: [Complete Feature Documentation](https://github.com/maximhq/bifrost/wiki
 
 ---
 
@@ -140,7 +140,7 @@ genai.configure(
 )
 ```
 
-**Complete Integration Guides**: [SDK Integrations](https://docs.getbifrost.ai/integrations/what-is-an-integration)
+**Complete Integration Guides**: [SDK Integrations](https://github.com/maximhq/bifrost/wiki
 
 ---
 
@@ -148,19 +148,19 @@ genai.configure(
 
 ### Getting Started
 
-- [Quick Setup Guide](https://docs.getbifrost.ai/quickstart/gateway/setting-up) - Detailed installation and configuration
-- [Provider Configuration](https://docs.getbifrost.ai/quickstart/gateway/provider-configuration) - Connect multiple AI providers
-- [Integration Guide](https://docs.getbifrost.ai/quickstart/gateway/integrations) - SDK replacements
+- [Quick Setup Guide](https://github.com/maximhq/bifrost/wiki
+- [Provider Configuration](https://github.com/maximhq/bifrost/wiki
+- [Integration Guide](https://github.com/maximhq/bifrost/wiki
 
 ### Advanced Topics
 
-- [MCP Tool Calling](https://docs.getbifrost.ai/features/mcp) - External tool integration
-- [Semantic Caching](https://docs.getbifrost.ai/features/semantic-caching) - Intelligent response caching
-- [Fallbacks & Load Balancing](https://docs.getbifrost.ai/features/fallbacks) - Reliability and scaling
-- [Budget Management](https://docs.getbifrost.ai/features/governance) - Cost control and governance
+- [MCP Tool Calling](https://github.com/maximhq/bifrost/wiki
+- [Semantic Caching](https://github.com/maximhq/bifrost/wiki
+- [Fallbacks & Load Balancing](https://github.com/maximhq/bifrost/wiki
+- [Budget Management](https://github.com/maximhq/bifrost/wiki
 
-**Browse All Documentation**: [https://docs.getbifrost.ai](https://docs.getbifrost.ai)
+**Browse All Documentation**: [https://github.com/maximhq/bifrost/wiki
 
 ---
 
-*Built with ❤️ by [Maxim](https://getmaxim.ai)*
+*Built with ❤️ by [Maxim](https://github.com/maximhq/bifrost)*

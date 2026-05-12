@@ -284,7 +284,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ open, onClose, onSaved }) => {
 												<Tooltip>
 													<TooltipTrigger asChild>
 														<a
-															href="https://docs.getbifrost.ai/mcp/code-mode"
+															href="https://github.com/maximhq/bifrost/wiki"
 															target="_blank"
 															rel="noopener noreferrer"
 															data-testid="code-mode-link-help"

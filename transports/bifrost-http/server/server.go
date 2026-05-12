@@ -28,6 +28,7 @@ import (
 	"github.com/maximhq/bifrost/plugins/prompts"
 	"github.com/maximhq/bifrost/plugins/semanticcache"
 	"github.com/maximhq/bifrost/plugins/telemetry"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/quotatracker"
 	"github.com/maximhq/bifrost/transports/bifrost-http/handlers"
 	"github.com/maximhq/bifrost/transports/bifrost-http/integrations"
 	"github.com/maximhq/bifrost/transports/bifrost-http/lib"
@@ -47,7 +48,24 @@ const (
 )
 
 var enterprisePlugins = []string{
-	"datadog",
+	"rbac",
+	"audit",
+	"guardrails",
+	"sso",
+	"clustering",
+	"adaptive_loadbalancer",
+	"scim",
+	"alert_channels",
+	"evals",
+	"pii_redactor",
+	"user_governance",
+	"access_profiles",
+	"scoped_api_keys",
+	"prompt_deployments",
+	"data_connectors",
+	"large_payload",
+	"quota_tracker",
+	"vault",
 }
 
 // ServerCallbacks is a interface that defines the callbacks for the server.
@@ -1120,6 +1138,39 @@ func (s *BifrostHTTPServer) RegisterAPIRoutes(ctx context.Context, callbacks Ser
 	if governanceHandler != nil {
 		governanceHandler.RegisterRoutes(s.Router, middlewares...)
 	}
+
+	// Enterprise handlers (only when enterprise mode is enabled)
+	if ctx.Value(schemas.BifrostContextKeyIsEnterprise) != nil {
+		// Subscription handler
+		if s.Config.ConfigStore != nil {
+			subscriptionHandler := handlers.NewSubscriptionHandler(s.Config.ConfigStore)
+			subscriptionHandler.RegisterRoutes(s.Router, middlewares...)
+
+			// RBAC handler
+			rbacHandler := handlers.NewRBACHandler(s.Config.ConfigStore)
+			rbacHandler.RegisterRoutes(s.Router, middlewares...)
+
+			// Guardrails handler
+			guardrailsHandler := handlers.NewGuardrailsHandler(s.Config.ConfigStore)
+			guardrailsHandler.RegisterRoutes(s.Router, middlewares...)
+
+			// SSO handler
+			ssoHandler := handlers.NewSSOHandler(s.Config.ConfigStore)
+			ssoHandler.RegisterRoutes(s.Router, middlewares...)
+		}
+		// Audit handler
+		if s.Config.LogsStore != nil {
+			auditHandler := handlers.NewAuditHandler(s.Config.LogsStore)
+			auditHandler.RegisterRoutes(s.Router, middlewares...)
+		}
+		// Quota handler
+		quotaTrackerPlugin, _ := lib.FindPluginAs[*quotatracker.QuotaTrackerPlugin](s.Config, quotatracker.PluginName)
+		if quotaTrackerPlugin != nil {
+			quotaHandler := handlers.NewQuotaHandler(quotaTrackerPlugin)
+			quotaHandler.RegisterRoutes(s.Router, middlewares...)
+		}
+	}
+
 	if loggingHandler != nil {
 		loggingHandler.RegisterRoutes(s.Router, middlewares...)
 	}

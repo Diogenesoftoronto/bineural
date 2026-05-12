@@ -56,4 +56,4 @@ Configuration:
 
 Metrics: http://{{ include "bifrost.fullname" . }}:{{ .Values.service.port }}/metrics
 
-For documentation, visit: https://www.getbifrost.ai/docs
+For documentation, visit: https://github.com/maximhq/bifrost

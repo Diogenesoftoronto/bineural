@@ -1402,6 +1402,124 @@ func (m *MockConfigStore) RenamePromptSession(ctx context.Context, id uint, name
 }
 func (m *MockConfigStore) DeletePromptSession(ctx context.Context, id uint) error { return nil }
 
+// Subscription methods
+func (m *MockConfigStore) GetProviderSubscriptions(ctx context.Context) ([]tables.TableProviderSubscription, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) GetProviderSubscription(ctx context.Context, id string) (*tables.TableProviderSubscription, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) GetProviderSubscriptionsByProvider(ctx context.Context, provider string) ([]tables.TableProviderSubscription, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) CreateProviderSubscription(ctx context.Context, sub *tables.TableProviderSubscription, tx ...*gorm.DB) error { return nil }
+func (m *MockConfigStore) UpdateProviderSubscription(ctx context.Context, sub *tables.TableProviderSubscription, tx ...*gorm.DB) error { return nil }
+func (m *MockConfigStore) DeleteProviderSubscription(ctx context.Context, id string) error { return nil }
+func (m *MockConfigStore) UpdateProviderSubscriptionSpend(ctx context.Context, id string, additionalSpend float64) error { return nil }
+func (m *MockConfigStore) GetSaaSBillingTiers(ctx context.Context) ([]tables.TableSaaSBillingTier, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) GetSaaSBillingTier(ctx context.Context, id string) (*tables.TableSaaSBillingTier, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) CreateSaaSBillingTier(ctx context.Context, tier *tables.TableSaaSBillingTier, tx ...*gorm.DB) error { return nil }
+func (m *MockConfigStore) UpdateSaaSBillingTier(ctx context.Context, tier *tables.TableSaaSBillingTier, tx ...*gorm.DB) error { return nil }
+func (m *MockConfigStore) DeleteSaaSBillingTier(ctx context.Context, id string) error { return nil }
+func (m *MockConfigStore) GetUserSubscriptionsByVirtualKeyID(ctx context.Context, virtualKeyID string) ([]tables.TableUserSubscription, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) GetUserSubscriptionsByUserID(ctx context.Context, userID string) ([]tables.TableUserSubscription, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) GetUserSubscription(ctx context.Context, id string) (*tables.TableUserSubscription, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) GetUserSubscriptions(ctx context.Context) ([]tables.TableUserSubscription, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) CreateUserSubscription(ctx context.Context, sub *tables.TableUserSubscription, tx ...*gorm.DB) error { return nil }
+func (m *MockConfigStore) UpdateUserSubscription(ctx context.Context, sub *tables.TableUserSubscription, tx ...*gorm.DB) error { return nil }
+func (m *MockConfigStore) DeleteUserSubscription(ctx context.Context, id string) error { return nil }
+func (m *MockConfigStore) UpdateUserSubscriptionUsage(ctx context.Context, id string, additionalSpend float64, additionalTokens int64, additionalRequests int64) error { return nil }
+
+// RBAC methods
+func (m *MockConfigStore) CreateRole(ctx context.Context, role *tables.TableRBACRole) error { return nil }
+func (m *MockConfigStore) GetRole(ctx context.Context, id string) (*tables.TableRBACRole, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) GetRoleByName(ctx context.Context, name string) (*tables.TableRBACRole, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) ListRoles(ctx context.Context) ([]tables.TableRBACRole, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) UpdateRole(ctx context.Context, role *tables.TableRBACRole) error { return nil }
+func (m *MockConfigStore) DeleteRole(ctx context.Context, id string) error { return nil }
+func (m *MockConfigStore) CreatePermission(ctx context.Context, perm *tables.TableRBACPermission) error { return nil }
+func (m *MockConfigStore) ListPermissions(ctx context.Context) ([]tables.TableRBACPermission, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) DeletePermission(ctx context.Context, id string) error { return nil }
+func (m *MockConfigStore) AssignRoleToUser(ctx context.Context, assignment *tables.TableRBACRoleAssignment) error { return nil }
+func (m *MockConfigStore) GetUserRoleAssignments(ctx context.Context, userID string) ([]tables.TableRBACRoleAssignment, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) RemoveRoleAssignment(ctx context.Context, id string) error { return nil }
+func (m *MockConfigStore) AddPermissionToRole(ctx context.Context, rp *tables.TableRBACRolePermission) error { return nil }
+func (m *MockConfigStore) RemovePermissionFromRole(ctx context.Context, roleID, permissionID string) error {
+	return nil
+}
+func (m *MockConfigStore) GetRolePermissions(ctx context.Context, roleID string) ([]tables.TableRBACPermission, error) {
+	return nil, nil
+}
+
+// Guardrails methods
+func (m *MockConfigStore) CreateGuardrailRule(ctx context.Context, rule *tables.TableGuardrailRule) error { return nil }
+func (m *MockConfigStore) GetGuardrailRule(ctx context.Context, id string) (*tables.TableGuardrailRule, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) ListGuardrailRules(ctx context.Context) ([]tables.TableGuardrailRule, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) UpdateGuardrailRule(ctx context.Context, rule *tables.TableGuardrailRule) error { return nil }
+func (m *MockConfigStore) DeleteGuardrailRule(ctx context.Context, id string) error { return nil }
+func (m *MockConfigStore) CreateGuardrailProfile(ctx context.Context, profile *tables.TableGuardrailProfile) error { return nil }
+func (m *MockConfigStore) GetGuardrailProfile(ctx context.Context, id string) (*tables.TableGuardrailProfile, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) ListGuardrailProfiles(ctx context.Context) ([]tables.TableGuardrailProfile, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) UpdateGuardrailProfile(ctx context.Context, profile *tables.TableGuardrailProfile) error { return nil }
+func (m *MockConfigStore) DeleteGuardrailProfile(ctx context.Context, id string) error { return nil }
+func (m *MockConfigStore) AddRuleToProfile(ctx context.Context, pr *tables.TableGuardrailProfileRule) error { return nil }
+func (m *MockConfigStore) RemoveRuleFromProfile(ctx context.Context, profileID, ruleID string) error {
+	return nil
+}
+func (m *MockConfigStore) GetProfileRules(ctx context.Context, profileID string) ([]tables.TableGuardrailRule, error) {
+	return nil, nil
+}
+
+// SSO methods
+func (m *MockConfigStore) CreateSSOProvider(ctx context.Context, provider *tables.TableSSOProvider) error { return nil }
+func (m *MockConfigStore) GetSSOProvider(ctx context.Context, id string) (*tables.TableSSOProvider, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) GetSSOProviderByName(ctx context.Context, name string) (*tables.TableSSOProvider, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) ListSSOProviders(ctx context.Context) ([]tables.TableSSOProvider, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) UpdateSSOProvider(ctx context.Context, provider *tables.TableSSOProvider) error { return nil }
+func (m *MockConfigStore) DeleteSSOProvider(ctx context.Context, id string) error { return nil }
+func (m *MockConfigStore) CreateSSOSession(ctx context.Context, session *tables.TableSSOSession) error { return nil }
+func (m *MockConfigStore) GetSSOSessionByState(ctx context.Context, state string) (*tables.TableSSOSession, error) {
+	return nil, nil
+}
+func (m *MockConfigStore) DeleteSSOSession(ctx context.Context, id string) error { return nil }
+func (m *MockConfigStore) UpdateSSOSession(ctx context.Context, session *tables.TableSSOSession) error { return nil }
+
 // Helper functions for tests
 
 // createTempDir creates a temporary directory for test files
@@ -10323,7 +10441,7 @@ func TestSQLite_VKMCPConfig_MCPClientNameResolution(t *testing.T) {
 	dbPath := filepath.Join(tempDir, "config.db")
 	cfgPath := filepath.Join(tempDir, "config.json")
 	configJSON := fmt.Sprintf(`{
-		"$schema": "https://www.getbifrost.ai/schema",
+		"$schema": "https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json",
 		"config_store": {
 			"enabled": true,
 			"type": "sqlite",
@@ -10462,7 +10580,7 @@ func TestSQLite_VKMCPConfig_MCPClientNameNotFound(t *testing.T) {
 
 	// Create config.json with a virtual key that references a non-existent MCP client
 	configJSON := fmt.Sprintf(`{
-		"$schema": "https://www.getbifrost.ai/schema",
+		"$schema": "https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json",
 		"config_store": {
 			"enabled": true,
 			"type": "sqlite",

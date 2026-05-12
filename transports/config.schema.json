@@ -1,14 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2019-09/schema",
-  "$id": "https://www.getbifrost.ai/schema",
+  "$id": "https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json",
   "title": "Bifrost Configuration Schema",
   "description": "Schema for Bifrost HTTP transport configuration",
   "type": "object",
   "properties": {
     "$schema": {
       "type": "string",
-      "description": "The schema version. This should be set to \"https://www.getbifrost.ai/schema\"",
-      "const": "https://www.getbifrost.ai/schema"
+      "description": "The schema version. This should be set to \"https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json\"",
+      "const": "https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json"
     },
     "version": {
       "type": "integer",
@@ -63,6 +63,11 @@
         "enable_logging": {
           "type": "boolean",
           "description": "Enable request/response logging"
+        },
+        "enable_enterprise": {
+          "type": "boolean",
+          "description": "Enable enterprise-only features (RBAC, audit logs, guardrails, SSO, clustering, quota tracking)",
+          "default": false
         },
         "disable_content_logging": {
           "type": "boolean",

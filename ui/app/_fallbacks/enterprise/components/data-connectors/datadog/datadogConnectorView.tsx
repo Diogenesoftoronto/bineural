@@ -1,34 +1,65 @@
-import { Dog } from "lucide-react";
-import ContactUsView from "../../views/contactUsView";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useState } from "react";
+import { Plus, Settings } from "lucide-react";
 
-interface EnableToggleProps {
-	enabled: boolean;
-	onToggle: () => void;
-	disabled?: boolean;
-}
+export default function datadogConnectorView() {
+	const [showCreate, setShowCreate] = useState(false);
 
-interface DatadogConnectorViewProps {
-	onDelete?: () => void;
-	isDeleting?: boolean;
-	enableToggle?: EnableToggleProps;
-}
+	const mockItems = [
+		{ id: "1", name: "connector:datadog-prod", status: "active", updated: "2026-04-30" },
+		{ id: "2", name: "connector:datadog-prod", status: "active", updated: "2026-04-29" },
+	];
 
-export default function DatadogConnectorView(_props: DatadogConnectorViewProps) {
 	return (
-		<div className="space-y-6">
-			{/* Content - OSS: paywall only; no delete/save buttons */}
-			<div className="space-y-4">
-				<div className="flex w-full flex-col items-center justify-center py-8">
-					<ContactUsView
-						align="middle"
-						className="mx-auto w-full max-w-lg"
-						icon={<Dog className="h-[5.5rem] w-[5.5rem]" strokeWidth={1} />}
-						title="Unlock native Datadog data ingestion for better observability"
-						description="This feature is a part of the Bifrost enterprise license. We would love to know more about your use case and how we can help you."
-						readmeLink="https://docs.getbifrost.ai/enterprise/datadog-connector"
-					/>
+		<div className="flex h-full flex-col gap-6 p-6">
+			<div className="flex items-center justify-between">
+				<div>
+					<h2 className="text-lg font-semibold">Datadog Connector</h2>
+					<p className="text-sm text-muted-foreground">Send logs and metrics to Datadog for observability</p>
 				</div>
+				<Dialog open={showCreate} onOpenChange={setShowCreate}>
+					<DialogTrigger asChild>
+						<Button size="sm"><Plus className="mr-1 h-3 w-3" /> Add</Button>
+					</DialogTrigger>
+					<DialogContent>
+						<DialogHeader><DialogTitle>Create Datadog Connecto</DialogTitle></DialogHeader>
+						<div className="space-y-3 pt-2">
+							<div><Label className="text-xs">Name</Label><Input className="h-8 text-xs mt-1" placeholder="Enter name" /></div>
+							<Button size="sm" className="w-full" onClick={() => setShowCreate(false)}>Create</Button>
+						</div>
+					</DialogContent>
+				</Dialog>
 			</div>
+
+			<Card>
+				<Table>
+					<TableHeader>
+						<TableRow>
+							<TableHead className="text-xs">Name</TableHead>
+							<TableHead className="text-xs">Status</TableHead>
+							<TableHead className="text-xs">Last Updated</TableHead>
+							<TableHead className="text-xs text-right">Actions</TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{mockItems.map((item) => (
+							<TableRow key={item.id}>
+								<TableCell className="text-xs font-medium font-mono">{item.name}</TableCell>
+								<TableCell className="text-xs"><Badge variant="default" className="text-[10px]">{item.status}</Badge></TableCell>
+								<TableCell className="text-xs text-muted-foreground">{item.updated}</TableCell>
+								<TableCell className="text-xs text-right"><Button variant="ghost" size="sm" className="h-6 text-xs">Edit</Button></TableCell>
+							</TableRow>
+						))}
+					</TableBody>
+				</Table>
+			</Card>
 		</div>
 	);
 }

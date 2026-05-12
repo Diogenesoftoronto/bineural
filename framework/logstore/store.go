@@ -90,6 +90,14 @@ type LogStore interface {
 	UpdateAsyncJob(ctx context.Context, id string, updates map[string]interface{}) error
 	DeleteExpiredAsyncJobs(ctx context.Context) (int64, error)
 	DeleteStaleAsyncJobs(ctx context.Context, staleSince time.Time) (int64, error)
+
+	// Audit methods
+	CreateAuditEntry(ctx context.Context, entry *AuditEntry) error
+	GetAuditEntries(ctx context.Context, filter AuditFilter) ([]AuditEntry, int, error) // entries, total, error
+	GetAuditEntryByID(ctx context.Context, id string) (*AuditEntry, error)
+	GetAuditEntriesByUser(ctx context.Context, userID string, limit, offset int) ([]AuditEntry, error)
+	GetAuditEntriesByType(ctx context.Context, eventType string, limit, offset int) ([]AuditEntry, error)
+	DeleteAuditEntriesBefore(ctx context.Context, before time.Time) error // TTL cleanup
 }
 
 // NewLogStore creates a new log store based on the configuration.

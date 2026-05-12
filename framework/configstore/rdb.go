@@ -4696,3 +4696,520 @@ func (s *RDBConfigStore) TransferOauthUserTokensFromGatewaySession(ctx context.C
 	s.logger.Debug("[rdb] TransferOauthUserTokensFromGatewaySession done: rows_affected=%d", result.RowsAffected)
 	return nil
 }
+
+// ─── Provider Subscription CRUD ────────────────────────────────────────────────
+
+func (s *RDBConfigStore) GetProviderSubscriptions(ctx context.Context) ([]tables.TableProviderSubscription, error) {
+	var subs []tables.TableProviderSubscription
+	if err := s.DB().WithContext(ctx).Order("created_at ASC").Find(&subs).Error; err != nil {
+		return nil, err
+	}
+	return subs, nil
+}
+
+func (s *RDBConfigStore) GetProviderSubscription(ctx context.Context, id string) (*tables.TableProviderSubscription, error) {
+	var sub tables.TableProviderSubscription
+	if err := s.DB().WithContext(ctx).First(&sub, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return &sub, nil
+}
+
+func (s *RDBConfigStore) GetProviderSubscriptionsByProvider(ctx context.Context, provider string) ([]tables.TableProviderSubscription, error) {
+	var subs []tables.TableProviderSubscription
+	if err := s.DB().WithContext(ctx).Where("provider = ?", provider).Order("created_at ASC").Find(&subs).Error; err != nil {
+		return nil, err
+	}
+	return subs, nil
+}
+
+func (s *RDBConfigStore) CreateProviderSubscription(ctx context.Context, sub *tables.TableProviderSubscription, tx ...*gorm.DB) error {
+	var txDB *gorm.DB
+	if len(tx) > 0 {
+		txDB = tx[0]
+	} else {
+		txDB = s.DB()
+	}
+	return txDB.WithContext(ctx).Create(sub).Error
+}
+
+func (s *RDBConfigStore) UpdateProviderSubscription(ctx context.Context, sub *tables.TableProviderSubscription, tx ...*gorm.DB) error {
+	var txDB *gorm.DB
+	if len(tx) > 0 {
+		txDB = tx[0]
+	} else {
+		txDB = s.DB()
+	}
+	return txDB.WithContext(ctx).Save(sub).Error
+}
+
+func (s *RDBConfigStore) DeleteProviderSubscription(ctx context.Context, id string) error {
+	return s.DB().WithContext(ctx).Delete(&tables.TableProviderSubscription{}, "id = ?", id).Error
+}
+
+func (s *RDBConfigStore) UpdateProviderSubscriptionSpend(ctx context.Context, id string, additionalSpend float64) error {
+	return s.DB().WithContext(ctx).Model(&tables.TableProviderSubscription{}).
+		Where("id = ?", id).
+		Update("current_spend", gorm.Expr("current_spend + ?", additionalSpend)).Error
+}
+
+// ─── SaaS Billing Tier CRUD ────────────────────────────────────────────────────
+
+func (s *RDBConfigStore) GetSaaSBillingTiers(ctx context.Context) ([]tables.TableSaaSBillingTier, error) {
+	var tiers []tables.TableSaaSBillingTier
+	if err := s.DB().WithContext(ctx).Order("monthly_price ASC").Find(&tiers).Error; err != nil {
+		return nil, err
+	}
+	return tiers, nil
+}
+
+func (s *RDBConfigStore) GetSaaSBillingTier(ctx context.Context, id string) (*tables.TableSaaSBillingTier, error) {
+	var tier tables.TableSaaSBillingTier
+	if err := s.DB().WithContext(ctx).First(&tier, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return &tier, nil
+}
+
+func (s *RDBConfigStore) CreateSaaSBillingTier(ctx context.Context, tier *tables.TableSaaSBillingTier, tx ...*gorm.DB) error {
+	var txDB *gorm.DB
+	if len(tx) > 0 {
+		txDB = tx[0]
+	} else {
+		txDB = s.DB()
+	}
+	return txDB.WithContext(ctx).Create(tier).Error
+}
+
+func (s *RDBConfigStore) UpdateSaaSBillingTier(ctx context.Context, tier *tables.TableSaaSBillingTier, tx ...*gorm.DB) error {
+	var txDB *gorm.DB
+	if len(tx) > 0 {
+		txDB = tx[0]
+	} else {
+		txDB = s.DB()
+	}
+	return txDB.WithContext(ctx).Save(tier).Error
+}
+
+func (s *RDBConfigStore) DeleteSaaSBillingTier(ctx context.Context, id string) error {
+	return s.DB().WithContext(ctx).Delete(&tables.TableSaaSBillingTier{}, "id = ?", id).Error
+}
+
+// ─── User Subscription CRUD ────────────────────────────────────────────────────
+
+func (s *RDBConfigStore) GetUserSubscriptions(ctx context.Context) ([]tables.TableUserSubscription, error) {
+	var subs []tables.TableUserSubscription
+	if err := s.DB().WithContext(ctx).Preload("Tier").Order("created_at ASC").Find(&subs).Error; err != nil {
+		return nil, err
+	}
+	return subs, nil
+}
+
+func (s *RDBConfigStore) GetUserSubscription(ctx context.Context, id string) (*tables.TableUserSubscription, error) {
+	var sub tables.TableUserSubscription
+	if err := s.DB().WithContext(ctx).Preload("Tier").First(&sub, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return &sub, nil
+}
+
+func (s *RDBConfigStore) GetUserSubscriptionsByVirtualKeyID(ctx context.Context, virtualKeyID string) ([]tables.TableUserSubscription, error) {
+	var subs []tables.TableUserSubscription
+	if err := s.DB().WithContext(ctx).Preload("Tier").Where("virtual_key_id = ?", virtualKeyID).Find(&subs).Error; err != nil {
+		return nil, err
+	}
+	return subs, nil
+}
+
+func (s *RDBConfigStore) GetUserSubscriptionsByUserID(ctx context.Context, userID string) ([]tables.TableUserSubscription, error) {
+	var subs []tables.TableUserSubscription
+	if err := s.DB().WithContext(ctx).Preload("Tier").Where("user_id = ?", userID).Find(&subs).Error; err != nil {
+		return nil, err
+	}
+	return subs, nil
+}
+
+func (s *RDBConfigStore) CreateUserSubscription(ctx context.Context, sub *tables.TableUserSubscription, tx ...*gorm.DB) error {
+	var txDB *gorm.DB
+	if len(tx) > 0 {
+		txDB = tx[0]
+	} else {
+		txDB = s.DB()
+	}
+	return txDB.WithContext(ctx).Create(sub).Error
+}
+
+func (s *RDBConfigStore) UpdateUserSubscription(ctx context.Context, sub *tables.TableUserSubscription, tx ...*gorm.DB) error {
+	var txDB *gorm.DB
+	if len(tx) > 0 {
+		txDB = tx[0]
+	} else {
+		txDB = s.DB()
+	}
+	return txDB.WithContext(ctx).Save(sub).Error
+}
+
+func (s *RDBConfigStore) DeleteUserSubscription(ctx context.Context, id string) error {
+	return s.DB().WithContext(ctx).Delete(&tables.TableUserSubscription{}, "id = ?", id).Error
+}
+
+func (s *RDBConfigStore) UpdateUserSubscriptionUsage(ctx context.Context, id string, additionalSpend float64, additionalTokens int64, additionalRequests int64) error {
+	return s.DB().WithContext(ctx).Model(&tables.TableUserSubscription{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"current_spend": gorm.Expr("current_spend + ?", additionalSpend),
+			"tokens_used":   gorm.Expr("tokens_used + ?", additionalTokens),
+			"requests_used": gorm.Expr("requests_used + ?", additionalRequests),
+		}).Error
+}
+
+// ─── RBAC CRUD ────────────────────────────────────────────────────────────────
+
+func (s *RDBConfigStore) CreateRole(ctx context.Context, role *tables.TableRBACRole) error {
+	return s.DB().WithContext(ctx).Create(role).Error
+}
+
+func (s *RDBConfigStore) GetRole(ctx context.Context, id string) (*tables.TableRBACRole, error) {
+	var role tables.TableRBACRole
+	if err := s.DB().WithContext(ctx).First(&role, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return &role, nil
+}
+
+func (s *RDBConfigStore) GetRoleByName(ctx context.Context, name string) (*tables.TableRBACRole, error) {
+	var role tables.TableRBACRole
+	if err := s.DB().WithContext(ctx).Where("name = ?", name).First(&role).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return &role, nil
+}
+
+func (s *RDBConfigStore) ListRoles(ctx context.Context) ([]tables.TableRBACRole, error) {
+	var roles []tables.TableRBACRole
+	if err := s.DB().WithContext(ctx).Order("created_at ASC").Find(&roles).Error; err != nil {
+		return nil, err
+	}
+	return roles, nil
+}
+
+func (s *RDBConfigStore) UpdateRole(ctx context.Context, role *tables.TableRBACRole) error {
+	return s.DB().WithContext(ctx).Save(role).Error
+}
+
+func (s *RDBConfigStore) DeleteRole(ctx context.Context, id string) error {
+	return s.DB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Delete role-permission associations first
+		if err := tx.WithContext(ctx).Where("role_id = ?", id).Delete(&tables.TableRBACRolePermission{}).Error; err != nil {
+			return err
+		}
+		// Delete role assignments for this role
+		if err := tx.WithContext(ctx).Where("role_id = ?", id).Delete(&tables.TableRBACRoleAssignment{}).Error; err != nil {
+			return err
+		}
+		// Delete the role itself
+		result := tx.WithContext(ctx).Delete(&tables.TableRBACRole{}, "id = ?", id)
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return ErrNotFound
+		}
+		return nil
+	})
+}
+
+func (s *RDBConfigStore) CreatePermission(ctx context.Context, permission *tables.TableRBACPermission) error {
+	return s.DB().WithContext(ctx).Create(permission).Error
+}
+
+func (s *RDBConfigStore) ListPermissions(ctx context.Context) ([]tables.TableRBACPermission, error) {
+	var permissions []tables.TableRBACPermission
+	if err := s.DB().WithContext(ctx).Order("resource ASC, action ASC").Find(&permissions).Error; err != nil {
+		return nil, err
+	}
+	return permissions, nil
+}
+
+func (s *RDBConfigStore) DeletePermission(ctx context.Context, id string) error {
+	return s.DB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Delete role-permission associations first
+		if err := tx.WithContext(ctx).Where("permission_id = ?", id).Delete(&tables.TableRBACRolePermission{}).Error; err != nil {
+			return err
+		}
+		// Delete the permission itself
+		result := tx.WithContext(ctx).Delete(&tables.TableRBACPermission{}, "id = ?", id)
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return ErrNotFound
+		}
+		return nil
+	})
+}
+
+func (s *RDBConfigStore) AssignRoleToUser(ctx context.Context, assignment *tables.TableRBACRoleAssignment) error {
+	return s.DB().WithContext(ctx).Create(assignment).Error
+}
+
+func (s *RDBConfigStore) GetUserRoleAssignments(ctx context.Context, userID string) ([]tables.TableRBACRoleAssignment, error) {
+	var assignments []tables.TableRBACRoleAssignment
+	if err := s.DB().WithContext(ctx).Where("user_id = ?", userID).Order("created_at ASC").Find(&assignments).Error; err != nil {
+		return nil, err
+	}
+	return assignments, nil
+}
+
+func (s *RDBConfigStore) RemoveRoleAssignment(ctx context.Context, id string) error {
+	result := s.DB().WithContext(ctx).Delete(&tables.TableRBACRoleAssignment{}, "id = ?", id)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (s *RDBConfigStore) AddPermissionToRole(ctx context.Context, rolePermission *tables.TableRBACRolePermission) error {
+	return s.DB().WithContext(ctx).Create(rolePermission).Error
+}
+
+func (s *RDBConfigStore) RemovePermissionFromRole(ctx context.Context, roleID, permissionID string) error {
+	result := s.DB().WithContext(ctx).
+		Where("role_id = ? AND permission_id = ?", roleID, permissionID).
+		Delete(&tables.TableRBACRolePermission{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (s *RDBConfigStore) GetRolePermissions(ctx context.Context, roleID string) ([]tables.TableRBACPermission, error) {
+	var permissions []tables.TableRBACPermission
+	if err := s.DB().WithContext(ctx).
+		Joins("JOIN governance_rbac_role_permissions ON governance_rbac_role_permissions.permission_id = governance_rbac_permissions.id").
+		Where("governance_rbac_role_permissions.role_id = ?", roleID).
+		Order("governance_rbac_permissions.resource ASC, governance_rbac_permissions.action ASC").
+		Find(&permissions).Error; err != nil {
+		return nil, err
+	}
+	return permissions, nil
+}
+
+// --- Guardrails methods ---
+
+func (s *RDBConfigStore) CreateGuardrailRule(ctx context.Context, rule *tables.TableGuardrailRule) error {
+	return s.DB().WithContext(ctx).Create(rule).Error
+}
+
+func (s *RDBConfigStore) GetGuardrailRule(ctx context.Context, id string) (*tables.TableGuardrailRule, error) {
+	var rule tables.TableGuardrailRule
+	if err := s.DB().WithContext(ctx).Where("id = ?", id).First(&rule).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return &rule, nil
+}
+
+func (s *RDBConfigStore) ListGuardrailRules(ctx context.Context) ([]tables.TableGuardrailRule, error) {
+	var rules []tables.TableGuardrailRule
+	if err := s.DB().WithContext(ctx).Order("name ASC").Find(&rules).Error; err != nil {
+		return nil, err
+	}
+	return rules, nil
+}
+
+func (s *RDBConfigStore) UpdateGuardrailRule(ctx context.Context, rule *tables.TableGuardrailRule) error {
+	return s.DB().WithContext(ctx).Model(&tables.TableGuardrailRule{}).Where("id = ?", rule.ID).Updates(rule).Error
+}
+
+func (s *RDBConfigStore) DeleteGuardrailRule(ctx context.Context, id string) error {
+	return s.DB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("rule_id = ?", id).Delete(&tables.TableGuardrailProfileRule{}).Error; err != nil {
+			return err
+		}
+		result := tx.Where("id = ?", id).Delete(&tables.TableGuardrailRule{})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return ErrNotFound
+		}
+		return nil
+	})
+}
+
+func (s *RDBConfigStore) CreateGuardrailProfile(ctx context.Context, profile *tables.TableGuardrailProfile) error {
+	return s.DB().WithContext(ctx).Create(profile).Error
+}
+
+func (s *RDBConfigStore) GetGuardrailProfile(ctx context.Context, id string) (*tables.TableGuardrailProfile, error) {
+	var profile tables.TableGuardrailProfile
+	if err := s.DB().WithContext(ctx).Where("id = ?", id).First(&profile).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return &profile, nil
+}
+
+func (s *RDBConfigStore) ListGuardrailProfiles(ctx context.Context) ([]tables.TableGuardrailProfile, error) {
+	var profiles []tables.TableGuardrailProfile
+	if err := s.DB().WithContext(ctx).Order("name ASC").Find(&profiles).Error; err != nil {
+		return nil, err
+	}
+	return profiles, nil
+}
+
+func (s *RDBConfigStore) UpdateGuardrailProfile(ctx context.Context, profile *tables.TableGuardrailProfile) error {
+	return s.DB().WithContext(ctx).Model(&tables.TableGuardrailProfile{}).Where("id = ?", profile.ID).Updates(profile).Error
+}
+
+func (s *RDBConfigStore) DeleteGuardrailProfile(ctx context.Context, id string) error {
+	return s.DB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("profile_id = ?", id).Delete(&tables.TableGuardrailProfileRule{}).Error; err != nil {
+			return err
+		}
+		result := tx.Where("id = ?", id).Delete(&tables.TableGuardrailProfile{})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return ErrNotFound
+		}
+		return nil
+	})
+}
+
+func (s *RDBConfigStore) AddRuleToProfile(ctx context.Context, profileRule *tables.TableGuardrailProfileRule) error {
+	return s.DB().WithContext(ctx).Create(profileRule).Error
+}
+
+func (s *RDBConfigStore) RemoveRuleFromProfile(ctx context.Context, profileID, ruleID string) error {
+	result := s.DB().WithContext(ctx).
+		Where("profile_id = ? AND rule_id = ?", profileID, ruleID).
+		Delete(&tables.TableGuardrailProfileRule{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (s *RDBConfigStore) GetProfileRules(ctx context.Context, profileID string) ([]tables.TableGuardrailRule, error) {
+	var rules []tables.TableGuardrailRule
+	if err := s.DB().WithContext(ctx).
+		Joins("JOIN governance_guardrail_profile_rules ON governance_guardrail_profile_rules.rule_id = governance_guardrail_rules.id").
+		Where("governance_guardrail_profile_rules.profile_id = ?", profileID).
+		Order("governance_guardrail_rules.name ASC").
+		Find(&rules).Error; err != nil {
+		return nil, err
+	}
+	return rules, nil
+}
+
+// --- SSO methods ---
+
+func (s *RDBConfigStore) CreateSSOProvider(ctx context.Context, provider *tables.TableSSOProvider) error {
+	return s.DB().WithContext(ctx).Create(provider).Error
+}
+
+func (s *RDBConfigStore) GetSSOProvider(ctx context.Context, id string) (*tables.TableSSOProvider, error) {
+	var provider tables.TableSSOProvider
+	if err := s.DB().WithContext(ctx).Where("id = ?", id).First(&provider).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return &provider, nil
+}
+
+func (s *RDBConfigStore) GetSSOProviderByName(ctx context.Context, name string) (*tables.TableSSOProvider, error) {
+	var provider tables.TableSSOProvider
+	if err := s.DB().WithContext(ctx).Where("name = ?", name).First(&provider).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return &provider, nil
+}
+
+func (s *RDBConfigStore) ListSSOProviders(ctx context.Context) ([]tables.TableSSOProvider, error) {
+	var providers []tables.TableSSOProvider
+	if err := s.DB().WithContext(ctx).Order("name ASC").Find(&providers).Error; err != nil {
+		return nil, err
+	}
+	return providers, nil
+}
+
+func (s *RDBConfigStore) UpdateSSOProvider(ctx context.Context, provider *tables.TableSSOProvider) error {
+	return s.DB().WithContext(ctx).Model(&tables.TableSSOProvider{}).Where("id = ?", provider.ID).Updates(provider).Error
+}
+
+func (s *RDBConfigStore) DeleteSSOProvider(ctx context.Context, id string) error {
+	result := s.DB().WithContext(ctx).Where("id = ?", id).Delete(&tables.TableSSOProvider{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (s *RDBConfigStore) CreateSSOSession(ctx context.Context, session *tables.TableSSOSession) error {
+	return s.DB().WithContext(ctx).Create(session).Error
+}
+
+func (s *RDBConfigStore) GetSSOSessionByState(ctx context.Context, state string) (*tables.TableSSOSession, error) {
+	var session tables.TableSSOSession
+	if err := s.DB().WithContext(ctx).Where("state = ?", state).First(&session).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return &session, nil
+}
+
+func (s *RDBConfigStore) DeleteSSOSession(ctx context.Context, id string) error {
+	result := s.DB().WithContext(ctx).Where("id = ?", id).Delete(&tables.TableSSOSession{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (s *RDBConfigStore) UpdateSSOSession(ctx context.Context, session *tables.TableSSOSession) error {
+	return s.DB().WithContext(ctx).Model(&tables.TableSSOSession{}).Where("id = ?", session.ID).Updates(session).Error
+}

@@ -10,10 +10,10 @@ keywords:
   - llm
   - openai
   - anthropic
-home: https://www.getmaxim.ai/bifrost
+home: https://github.com/maximhq/bifrost
 sources:
   - https://github.com/maximhq/bifrost
 maintainers:
   - name: Bifrost Team
-    email: support@getbifrost.ai
-icon: https://www.getbifrost.ai/favicon.png
+    email: bifrost-community@users.noreply.github.com
+icon: https://raw.githubusercontent.com/maximhq/bifrost/main/docs/assets/bifrost-logo.png

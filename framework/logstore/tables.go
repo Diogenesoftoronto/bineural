@@ -91,6 +91,7 @@ type SessionSummaryResult struct {
 	StartedAt   string  `json:"started_at,omitempty"`
 	LatestAt    string  `json:"latest_at,omitempty"`
 	DurationMs  int64   `json:"duration_ms"`
+	AvgTPS      float64 `json:"avg_tps"` // Average tokens per second across the session
 }
 
 type SearchStats struct {
@@ -188,6 +189,10 @@ type Log struct {
 	CompletionTokens int `gorm:"default:0" json:"-"`
 	TotalTokens      int `gorm:"index:idx_logs_total_tokens;default:0" json:"-"`
 	CachedReadTokens int `gorm:"default:0" json:"-"`
+
+	// Denormalized energy fields for easier querying
+	EnergyJoules  float64 `gorm:"default:0" json:"-"`
+	BilledCostUSD  float64 `gorm:"default:0" json:"-"`
 
 	CreatedAt time.Time `gorm:"index;not null" json:"created_at"`
 
@@ -493,6 +498,10 @@ func (l *Log) SerializeFields() error {
 		l.TotalTokens = l.TokenUsageParsed.TotalTokens
 		if l.TokenUsageParsed.PromptTokensDetails != nil {
 			l.CachedReadTokens = l.TokenUsageParsed.PromptTokensDetails.CachedReadTokens
+		}
+		if l.TokenUsageParsed.Energy != nil {
+			l.EnergyJoules = l.TokenUsageParsed.Energy.EnergyJoules
+			l.BilledCostUSD = l.TokenUsageParsed.Energy.BilledCostUSD
 		}
 	}
 
@@ -1482,4 +1491,40 @@ type UserRankingWithTrend struct {
 // UserRankingResult is the response for the user rankings endpoint.
 type UserRankingResult struct {
 	Rankings []UserRankingWithTrend `json:"rankings"`
+}
+
+// AuditEntry represents a single audit log entry in the database.
+// Audit entries are immutable records of security-relevant events
+// (auth, authz, config changes, data access, etc.) with HMAC tamper-proofing.
+type AuditEntry struct {
+	ID            uint      `gorm:"primaryKey" json:"id"`
+	EventID       string    `gorm:"index:idx_audit_entries_event_id" json:"event_id"`
+	EventType     string    `gorm:"index:idx_audit_entries_event_type" json:"event_type"` // auth, authz, config_change, data_access, security, admin
+	Action        string    `json:"action"`
+	UserID        string    `gorm:"index:idx_audit_entries_user_id" json:"user_id"`
+	UserEmail     string    `json:"user_email"`
+	Resource      string    `gorm:"index:idx_audit_entries_resource" json:"resource"`
+	ResourceID    string    `json:"resource_id"`
+	StatusCode    int       `json:"status_code"`
+	IPAddress     string    `json:"ip_address"`
+	UserAgent     string    `json:"user_agent"`
+	Details       string    `gorm:"type:text" json:"details"`
+	HMACSignature string    `json:"hmac_signature"` // tamper-proof signature
+	Timestamp     time.Time `gorm:"index:idx_audit_entries_timestamp" json:"timestamp"`
+}
+
+// TableName sets the table name for GORM.
+func (AuditEntry) TableName() string {
+	return "audit_entries"
+}
+
+// AuditFilter represents the available filters for audit entry searches.
+type AuditFilter struct {
+	EventType string     `json:"event_type,omitempty"`
+	UserID    string     `json:"user_id,omitempty"`
+	Resource  string     `json:"resource,omitempty"`
+	StartTime *time.Time `json:"start_time,omitempty"`
+	EndTime   *time.Time `json:"end_time,omitempty"`
+	Limit     int        `json:"limit,omitempty"`
+	Offset    int        `json:"offset,omitempty"`
 }

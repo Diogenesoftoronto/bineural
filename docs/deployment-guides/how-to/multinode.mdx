@@ -17,8 +17,8 @@ Running multiple Bifrost nodes provides high availability, load distribution, an
   - Once a node is initialized, it does not read this information back from the database.
   - In the Enterprise version, we use a slightly modified version of RAFT to synchronize this state in real time across nodes, while the database acts only as a dumb store.
   - Based on our current view, OSS is sufficient for startups and medium-scale teams, and can easily handle around 3,000–5,000 RPS on a single instance.
-  - If you need high availability and enterprise capabilities such as real-time synchronization, the Enterprise plan is the right fit. 
-  - And yes, that is part of how we draw the OSS vs Enterprise line 💰.
+  - If you need high availability and enterprise capabilities such as real-time synchronization, enable `enable_enterprise: true` in your config.json.
+  - And yes, that is part of how we draw the OSS vs Enterprise line.
 </Warning>
 
 ### OSS vs Enterprise
@@ -61,7 +61,7 @@ Using `config_store` (database-backed configuration) with multiple nodes in OSS 
 This defeats the purpose of having database-backed configuration with real-time updates.
 
 <Warning>
-Without P2P clustering (Enterprise feature), there's no mechanism to notify other nodes of configuration changes. For OSS multinode deployments, use the shared `config.json` approach instead.
+Without P2P clustering, there's no mechanism to notify other nodes of configuration changes. For multinode deployments without clustering, use the shared `config.json` approach instead. Enable clustering with `enable_enterprise: true`.
 </Warning>
 
 ### Enterprise Solution
@@ -82,7 +82,7 @@ If you use PostgreSQL for `logs_store`, ensure the target database is UTF8 encod
 
 ```json
 {
-  "$schema": "https://www.getbifrost.ai/schema",
+  "$schema": "https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json",
   "client": {
     "drop_excess_requests": false,
     "enable_logging": false    
@@ -137,7 +137,7 @@ metadata:
 data:
   config.json: |
     {
-      "$schema": "https://www.getbifrost.ai/schema",
+      "$schema": "https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json",
       "client": {
         "drop_excess_requests": false,
         "enable_logging": false        

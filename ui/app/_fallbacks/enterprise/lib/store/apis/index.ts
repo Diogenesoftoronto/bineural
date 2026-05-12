@@ -1,11 +1,16 @@
-// Placeholder for enterprise APIs
-// Export empty objects when enterprise features are not available
+// Enterprise API slices — each injects endpoints into baseApi on import
+import "./accessProfileApi";
+import "./auditApi";
+import "./guardrailsApi";
+import "./largePayloadApi";
+import "./rbacApi";
+import "./scimApi";
+import "./virtualKeyUsersApi";
 
-export const scimApi = null;
-export const guardrailsApi = null;
-export const clusterApi = null;
-export const rbacApi = null;
-export const auditLogsApi = null;
-
-// Empty apis array when enterprise features are not available
-export const apis = [];
+export { accessProfileApi } from "./accessProfileApi";
+export { auditApi } from "./auditApi";
+export { guardrailsApi } from "./guardrailsApi";
+export { largePayloadApi } from "./largePayloadApi";
+export { rbacApi } from "./rbacApi";
+export { scimApi } from "./scimApi";
+export { virtualKeyUsersApi } from "./virtualKeyUsersApi";

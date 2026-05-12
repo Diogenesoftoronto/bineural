@@ -128,7 +128,19 @@ func IsBuiltinPlugin(name string) bool {
 		name == "guardrails" ||
 		name == "sso" ||
 		name == "clustering" ||
-		name == "adaptive_loadbalancer"
+		name == "adaptive_loadbalancer" ||
+		name == "scim" ||
+		name == "alert_channels" ||
+		name == "evals" ||
+		name == "pii_redactor" ||
+		name == "user_governance" ||
+		name == "access_profiles" ||
+		name == "scoped_api_keys" ||
+		name == "prompt_deployments" ||
+		name == "data_connectors" ||
+		name == "large_payload" ||
+		name == "quota_tracker" ||
+		name == "vault"
 }
 
 // pluginOrderInfo stores ordering metadata for a plugin.
@@ -460,10 +472,10 @@ func LoadConfig(ctx context.Context, configDirPath string) (*Config, error) {
 		if err := json.Unmarshal(data, &schema); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal schema: %w", err)
 		}
-		if schema["$schema"] != "https://www.getbifrost.ai/schema" {
+		if schema["$schema"] != "https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json" {
 			yellowColor := "\033[33m"
 			resetColor := "\033[0m"
-			message := fmt.Sprintf("config file %s does not include \"$schema\":\"https://www.getbifrost.ai/schema\". Use our official schema file to avoid unexpected behavior.", absConfigFilePath)
+			message := fmt.Sprintf("config file %s does not include \"$schema\":\"https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json\". Use our official schema file to avoid unexpected behavior.", absConfigFilePath)
 			boxWidth := 100
 			contentWidth := boxWidth - 4
 			words := strings.Fields(message)
@@ -492,11 +504,11 @@ func LoadConfig(ctx context.Context, configDirPath string) (*Config, error) {
 			}
 			fmt.Printf("%s╚%s╝%s\n", yellowColor, strings.Repeat("═", boxWidth-2), resetColor)
 			fmt.Println("")
-			logger.Warn("config file %s does not include \"$schema\":\"https://www.getbifrost.ai/schema\". Use our official schema file to avoid unexpected behavior.", absConfigFilePath)
+			logger.Warn("config file %s does not include \"$schema\":\"https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json\". Use our official schema file to avoid unexpected behavior.", absConfigFilePath)
 		}
 		// Validate config file against the schema
 		if err := ValidateConfigSchema(data); err != nil {
-			logger.Error("config validation failed: %v. You can find the official schema at https://www.getbifrost.ai/schema. Some features may not work as expected unless you fix the config file.", err)
+			logger.Error("config validation failed: %v. You can find the official schema at https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json. Some features may not work as expected unless you fix the config file.", err)
 		}
 		// Parse config data
 		if err := json.Unmarshal(data, &configData); err != nil {

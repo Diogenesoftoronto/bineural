@@ -1,5 +1,5 @@
 {
-    "$schema": "https://www.getbifrost.ai/schema",
+    "$schema": "https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json",
     "encryption_key": "<REPLACE_WITH_BASE64_KEY>",
     "config_store": {
         "enabled": true,

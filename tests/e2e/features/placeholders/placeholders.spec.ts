@@ -13,7 +13,7 @@ test.describe('Placeholder and Enterprise Pages', () => {
     const readMore = page.getByRole('button', { name: /Read more/i })
     await expect(readMore).toBeVisible()
     const [popup] = await Promise.all([page.waitForEvent('popup'), readMore.click()])
-    await expect(popup).toHaveURL(/^https:\/\/docs\.getbifrost\.ai\/enterprise\/alert-channels(\?|$)/)
+    await expect(popup).toHaveURL(/github\.com\/maximhq\/bifrost\/wiki/)
     await popup.close()
   })
 
@@ -60,7 +60,7 @@ test.describe('Placeholder and Enterprise Pages', () => {
     const readMore = page.getByRole('button', { name: /Read more/i })
     await expect(readMore).toBeVisible()
     const [popup] = await Promise.all([page.waitForEvent('popup'), readMore.click()])
-    await expect(popup).toHaveURL(/^https:\/\/docs\.getbifrost\.ai\/enterprise\/adaptive-load-balancing(\?|$)/)
+    await expect(popup).toHaveURL(/github\.com\/maximhq\/bifrost\/wiki/)
     await popup.close()
   })
 

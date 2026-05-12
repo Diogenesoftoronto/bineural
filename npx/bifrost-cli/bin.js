@@ -7,7 +7,7 @@ import { dirname, join } from "path";
 import { Readable } from "stream";
 import { createInterface } from "readline";
 
-const BASE_URL = "https://downloads.getmaxim.ai";
+const BASE_URL = "https://github.com/maximhq/bifrost/releases/download";
 
 // Parse CLI version from command line arguments
 function parseCliVersion() {

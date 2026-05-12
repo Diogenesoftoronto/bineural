@@ -1448,10 +1448,10 @@ For bare metal or VM deployments using systemd:
 **Step 1: Install Bifrost on each node**
 
 ```bash
-# Download Bifrost Enterprise binary
-curl -O https://releases.getmaxim.ai/bifrost-enterprise/latest/bifrost-enterprise-linux-amd64
-chmod +x bifrost-enterprise-linux-amd64
-sudo mv bifrost-enterprise-linux-amd64 /usr/local/bin/bifrost-enterprise
+# Download Bifrost binary from GitHub Releases
+curl -O https://github.com/maximhq/bifrost/releases/latest/download/bifrost-linux-amd64
+chmod +x bifrost-linux-amd64
+sudo mv bifrost-linux-amd64 /usr/local/bin/bifrost
 ```
 
 **Step 2: Create configuration file**

@@ -45,8 +45,8 @@ func ValidateConfigSchema(data []byte, schemaOverride ...[]byte) error {
 		// This avoids validating against a potentially stale remote schema.
 		configSchemaJSONBytes = localSchema
 	} else {
-		// Pulling config.schema from https://www.getbifrost.ai/schema
-		configSchemaJSON, err := http.Get("https://www.getbifrost.ai/schema")
+		// Pulling config.schema from https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json
+		configSchemaJSON, err := http.Get("https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json")
 		if err != nil {
 			return fmt.Errorf("failed to get config schema: %w", err)
 		}
