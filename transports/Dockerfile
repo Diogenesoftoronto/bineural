@@ -39,7 +39,7 @@
   ARG VERSION=unknown
   RUN go build \
     -ldflags="-w -s -X main.Version=v${VERSION} -extldflags '-static'" \
-    -a -trimpath \
+    -trimpath \
     -tags "sqlite_static" \
     -o /app/main \
     ./bifrost-http
