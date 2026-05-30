@@ -15,10 +15,10 @@
       "path": "/app/data/logs.db"
     }
   },
-  "plugins": {
-    "rbac": { "enabled": true, "config": {} },
-    "audit": { "enabled": true, "config": {} },
-    "guardrails": { "enabled": true, "config": {} },
-    "adaptive_loadbalancer": { "enabled": true, "config": {} }
-  }
+  "plugins": [
+    { "enabled": true, "name": "rbac", "config": {} },
+    { "enabled": true, "name": "audit", "config": {} },
+    { "enabled": true, "name": "guardrails", "config": {} },
+    { "enabled": true, "name": "adaptive_loadbalancer", "config": {} }
+  ]
 }
