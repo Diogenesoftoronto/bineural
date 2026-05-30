@@ -20,5 +20,108 @@
     { "enabled": true, "name": "audit", "config": {} },
     { "enabled": true, "name": "guardrails", "config": {} },
     { "enabled": true, "name": "adaptive_loadbalancer", "config": {} }
-  ]
+  ],
+  "providers": {
+    "anthropic": {
+      "keys": [
+        {
+          "name": "anthropic-key-1",
+          "value": "env.ANTHROPIC_API_KEY",
+          "models": ["*"],
+          "weight": 1.0
+        }
+      ]
+    },
+    "openai": {
+      "keys": [
+        {
+          "name": "openai-key-1",
+          "value": "env.OPENAI_API_KEY",
+          "models": ["*"],
+          "weight": 1.0
+        }
+      ]
+    },
+    "gemini": {
+      "keys": [
+        {
+          "name": "gemini-key-1",
+          "value": "env.GEMINI_API_KEY",
+          "models": ["*"],
+          "weight": 1.0
+        }
+      ]
+    },
+    "huggingface": {
+      "keys": [
+        {
+          "name": "huggingface-key-1",
+          "value": "env.HF_API_KEY",
+          "models": ["*"],
+          "weight": 1.0
+        }
+      ]
+    },
+    "neuralwatt": {
+      "keys": [
+        {
+          "name": "neuralwatt-key-1",
+          "value": "env.NEURALWATT_API_KEY",
+          "models": ["*"],
+          "weight": 1.0
+        }
+      ],
+      "network_config": {
+        "base_url": "https://api.neuralwatt.com"
+      },
+      "custom_provider_config": {
+        "base_provider_type": "openai",
+        "allowed_requests": {
+          "chat_completion": true,
+          "chat_completion_stream": true,
+          "embedding": true
+        }
+      }
+    },
+    "synthetic": {
+      "keys": [
+        {
+          "name": "synthetic-key-1",
+          "value": "env.SYNTHETIC_API_KEY",
+          "models": ["*"],
+          "weight": 1.0
+        }
+      ],
+      "network_config": {
+        "base_url": "https://api.synthetic.new"
+      },
+      "custom_provider_config": {
+        "base_provider_type": "openai",
+        "allowed_requests": {
+          "chat_completion": true,
+          "chat_completion_stream": true
+        }
+      }
+    },
+    "minimax": {
+      "keys": [
+        {
+          "name": "minimax-key-1",
+          "value": "env.MINIMAX_API_KEY",
+          "models": ["*"],
+          "weight": 1.0
+        }
+      ],
+      "network_config": {
+        "base_url": "https://api.minimax.io"
+      },
+      "custom_provider_config": {
+        "base_provider_type": "openai",
+        "allowed_requests": {
+          "chat_completion": true,
+          "chat_completion_stream": true
+        }
+      }
+    }
+  }
 }
