@@ -59,6 +59,7 @@
   # Create data directory and set up user
   COPY --from=builder /app/main .
   COPY --from=builder /app/docker-entrypoint.sh .
+  COPY config.json /app/default-config.json
   
   # Getting arguments
   ARG ARG_APP_PORT=8080

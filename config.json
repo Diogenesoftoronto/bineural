@@ -1,0 +1,24 @@
+{
+  "$schema": "https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json",
+  "enable_enterprise": true,
+  "config_store": {
+    "enabled": true,
+    "type": "sqlite",
+    "config": {
+      "path": "/app/data/config.db"
+    }
+  },
+  "logs_store": {
+    "enabled": true,
+    "type": "sqlite",
+    "config": {
+      "path": "/app/data/logs.db"
+    }
+  },
+  "plugins": {
+    "rbac": { "enabled": true, "config": {} },
+    "audit": { "enabled": true, "config": {} },
+    "guardrails": { "enabled": true, "config": {} },
+    "adaptive_loadbalancer": { "enabled": true, "config": {} }
+  }
+}

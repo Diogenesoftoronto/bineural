@@ -36,6 +36,10 @@ fix_permissions() {
 # Fix permissions before starting the application
 fix_permissions
 
+if [ -f /app/default-config.json ] && [ ! -f "$APP_DIR/config.json" ]; then
+    cp /app/default-config.json "$APP_DIR/config.json"
+fi
+
 # Parse command line arguments and set environment variables
 parse_args() {
     while [ $# -gt 0 ]; do
