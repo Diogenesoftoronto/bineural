@@ -16,8 +16,8 @@ const (
 
 	ConfigLastPricingSyncKey      = "LastModelPricingSync"
 	ConfigLastParamsSyncKey       = "LastModelParametersSync"
-	DefaultPricingURL             = "https://raw.githubusercontent.com/maximhq/bifrost/main/pricing/datasheet.json"
-	DefaultModelParametersURL     = "https://raw.githubusercontent.com/maximhq/bifrost/main/pricing/datasheet.json/model-parameters"
+	DefaultPricingURL             = "https://getbifrost.ai/datasheet"
+	DefaultModelParametersURL     = "https://getbifrost.ai/datasheet/model-parameters"
 	DefaultPricingTimeout         = 45 * time.Second
 	DefaultModelParametersTimeout = 45 * time.Second
 )
