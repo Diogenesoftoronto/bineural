@@ -93,8 +93,6 @@
   USER appuser
   
   
-  # Declare volume for data persistence
-  VOLUME ["/app/data"]
   EXPOSE $APP_PORT
   
   # Health check for container status monitoring
