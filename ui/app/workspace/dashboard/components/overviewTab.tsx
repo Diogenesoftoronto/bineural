@@ -1,10 +1,12 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type {
 	CostHistogramResponse,
+	EnergyHistogramResponse,
 	LatencyHistogramResponse,
 	LogStats,
 	LogsHistogramResponse,
 	ModelHistogramResponse,
+	TPSHistogramResponse,
 	TokenHistogramResponse,
 } from "@/lib/types/logs";
 import {
@@ -19,11 +21,14 @@ import ExternalCacheTokenMeterChart from "./charts/externalCacheTokenMeterChart"
 import LocalCacheTokenMeterChart from "./charts/localCacheTokenMeterChart";
 import { ChartCard } from "./charts/chartCard";
 import { type ChartType, ChartTypeToggle } from "./charts/chartTypeToggle";
+import { CacheHitRateChart } from "./charts/cacheHitRateChart";
 import { CostChart } from "./charts/costChart";
+import { EnergyUsageChart } from "./charts/energyUsageChart";
 import { LatencyChart } from "./charts/latencyChart";
 import { LogVolumeChart } from "./charts/logVolumeChart";
 import { ModelFilterSelect } from "./charts/modelFilterSelect";
 import { ModelUsageChart } from "./charts/modelUsageChart";
+import { TPSChart } from "./charts/tpsChart";
 import { TokenUsageChart } from "./charts/tokenUsageChart";
 
 export interface OverviewTabProps {
@@ -33,6 +38,8 @@ export interface OverviewTabProps {
 	costData: CostHistogramResponse | null;
 	modelData: ModelHistogramResponse | null;
 	latencyData: LatencyHistogramResponse | null;
+	energyData: EnergyHistogramResponse | null;
+	tpsData: TPSHistogramResponse | null;
 	logsStats: LogStats | null;
 
 	// Loading states
@@ -41,6 +48,8 @@ export interface OverviewTabProps {
 	loadingCost: boolean;
 	loadingModels: boolean;
 	loadingLatency: boolean;
+	loadingEnergy: boolean;
+	loadingTps: boolean;
 	loadingStats: boolean;
 
 	// Time range
@@ -53,6 +62,9 @@ export interface OverviewTabProps {
 	costChartType: ChartType;
 	modelChartType: ChartType;
 	latencyChartType: ChartType;
+	energyChartType: ChartType;
+	tpsChartType: ChartType;
+	cacheChartType: ChartType;
 
 	// Model selections
 	costModel: string;
@@ -69,6 +81,9 @@ export interface OverviewTabProps {
 	onCostChartToggle: (type: ChartType) => void;
 	onModelChartToggle: (type: ChartType) => void;
 	onLatencyChartToggle: (type: ChartType) => void;
+	onEnergyChartToggle: (type: ChartType) => void;
+	onTpsChartToggle: (type: ChartType) => void;
+	onCacheChartToggle: (type: ChartType) => void;
 
 	// Filter callbacks
 	onCostModelChange: (model: string) => void;
@@ -81,12 +96,16 @@ export function OverviewTab({
 	costData,
 	modelData,
 	latencyData,
+	energyData,
+	tpsData,
 	logsStats,
 	loadingHistogram,
 	loadingTokens,
 	loadingCost,
 	loadingModels,
 	loadingLatency,
+	loadingEnergy,
+	loadingTps,
 	loadingStats,
 	startTime,
 	endTime,
@@ -95,6 +114,9 @@ export function OverviewTab({
 	costChartType,
 	modelChartType,
 	latencyChartType,
+	energyChartType,
+	tpsChartType,
+	cacheChartType,
 	costModel,
 	usageModel,
 	costModels,
@@ -105,6 +127,9 @@ export function OverviewTab({
 	onCostChartToggle,
 	onModelChartToggle,
 	onLatencyChartToggle,
+	onEnergyChartToggle,
+	onTpsChartToggle,
+	onCacheChartToggle,
 	onCostModelChange,
 	onUsageModelChange,
 }: OverviewTabProps) {
@@ -176,6 +201,48 @@ export function OverviewTab({
 				{/* Local Cache Hit Rate Meter */}
 				<ChartCard title="Local Cache Hit Rate" loading={loadingStats} testId="chart-cache-local">
 					<LocalCacheTokenMeterChart data={logsStats} />
+				</ChartCard>
+
+				{/* Cache Hit Rate Over Time */}
+				<ChartCard
+					title="Cache Hit Rate"
+					loading={loadingTokens}
+					testId="chart-cache-hit-rate"
+					headerActions={
+						<div className={CHART_HEADER_CONTROLS_CLASS}>
+							<ChartTypeToggle chartType={cacheChartType} onToggle={onCacheChartToggle} data-testid="dashboard-cache-chart-toggle" />
+						</div>
+					}
+				>
+					<CacheHitRateChart data={tokenData} chartType={cacheChartType} startTime={startTime} endTime={endTime} />
+				</ChartCard>
+
+				{/* Energy (joules) + billed-cost (USD) */}
+				<ChartCard
+					title="Energy & Billed Cost"
+					loading={loadingEnergy}
+					testId="chart-energy"
+					headerActions={
+						<div className={CHART_HEADER_CONTROLS_CLASS}>
+							<ChartTypeToggle chartType={energyChartType} onToggle={onEnergyChartToggle} data-testid="dashboard-energy-chart-toggle" />
+						</div>
+					}
+				>
+					<EnergyUsageChart data={energyData} chartType={energyChartType} startTime={startTime} endTime={endTime} />
+				</ChartCard>
+
+				{/* Tokens per second */}
+				<ChartCard
+					title="Tokens / sec"
+					loading={loadingTps}
+					testId="chart-tps"
+					headerActions={
+						<div className={CHART_HEADER_CONTROLS_CLASS}>
+							<ChartTypeToggle chartType={tpsChartType} onToggle={onTpsChartToggle} data-testid="dashboard-tps-chart-toggle" />
+						</div>
+					}
+				>
+					<TPSChart data={tpsData} chartType={tpsChartType} startTime={startTime} endTime={endTime} />
 				</ChartCard>
 
 				{/* Cost Chart */}

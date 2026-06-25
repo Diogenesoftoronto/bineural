@@ -141,6 +141,8 @@ export const baseApi = createApi({
 		"ProviderGovernance",
 		"Plugins",
 		"SCIMProviders",
+		"SCIMUsers",
+		"SCIMGroups",
 		"User",
 		"Guardrails",
 		"ClusterNodes",

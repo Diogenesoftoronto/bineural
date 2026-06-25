@@ -311,7 +311,7 @@ func TestGovernanceStore_MultiBudget_UsageUpdatesAllBudgets(t *testing.T) {
 	vk, _ = store.GetVirtualKey(context.Background(), "sk-bf-test")
 
 	// Simulate a $3.50 request
-	err = store.UpdateVirtualKeyBudgetUsageInMemory(context.Background(), vk, schemas.OpenAI, 3.50)
+	err = store.UpdateVirtualKeyBudgetUsageInMemory(context.Background(), vk, schemas.OpenAI, 3.50, 0)
 	require.NoError(t, err)
 
 	// Both budgets should reflect the cost
@@ -324,7 +324,7 @@ func TestGovernanceStore_MultiBudget_UsageUpdatesAllBudgets(t *testing.T) {
 	assert.InDelta(t, 3.50, dailyVal.(*configstoreTables.TableBudget).CurrentUsage, 0.01, "Daily budget should reflect usage")
 
 	// Second request: $7.00 — should push hourly over limit
-	err = store.UpdateVirtualKeyBudgetUsageInMemory(context.Background(), vk, schemas.OpenAI, 7.00)
+	err = store.UpdateVirtualKeyBudgetUsageInMemory(context.Background(), vk, schemas.OpenAI, 7.00, 0)
 	require.NoError(t, err)
 
 	hourlyVal, _ = store.budgets.Load("hourly")
@@ -475,7 +475,7 @@ func TestGovernanceStore_MultiBudget_UsageDrivesBlockAfterRequests(t *testing.T)
 
 	// Request 1: $0.80 — both budgets fine
 	vk, _ = store.GetVirtualKey(context.Background(), "sk-bf-test")
-	err = store.UpdateVirtualKeyBudgetUsageInMemory(context.Background(), vk, schemas.OpenAI, 0.80)
+	err = store.UpdateVirtualKeyBudgetUsageInMemory(context.Background(), vk, schemas.OpenAI, 0.80, 0)
 	require.NoError(t, err)
 
 	ctx := &schemas.BifrostContext{}
@@ -484,7 +484,7 @@ func TestGovernanceStore_MultiBudget_UsageDrivesBlockAfterRequests(t *testing.T)
 
 	// Request 2: $0.80 — still fine ($1.60 total)
 	vk, _ = store.GetVirtualKey(context.Background(), "sk-bf-test")
-	err = store.UpdateVirtualKeyBudgetUsageInMemory(context.Background(), vk, schemas.OpenAI, 0.80)
+	err = store.UpdateVirtualKeyBudgetUsageInMemory(context.Background(), vk, schemas.OpenAI, 0.80, 0)
 	require.NoError(t, err)
 
 	ctx = &schemas.BifrostContext{}
@@ -493,7 +493,7 @@ func TestGovernanceStore_MultiBudget_UsageDrivesBlockAfterRequests(t *testing.T)
 
 	// Request 3: $0.80 — pushes hourly to $2.40 > $2.00 limit → blocked
 	vk, _ = store.GetVirtualKey(context.Background(), "sk-bf-test")
-	err = store.UpdateVirtualKeyBudgetUsageInMemory(context.Background(), vk, schemas.OpenAI, 0.80)
+	err = store.UpdateVirtualKeyBudgetUsageInMemory(context.Background(), vk, schemas.OpenAI, 0.80, 0)
 	require.NoError(t, err)
 
 	ctx = &schemas.BifrostContext{}
@@ -1166,4 +1166,125 @@ func TestCompileAndCacheProgram_EmptyExpression(t *testing.T) {
 // Utility functions for tests
 func ptrInt64(i int64) *int64 {
 	return &i
+}
+
+// TestGovernanceStore_BumpBudgetUsage_EnergyJoules proves BumpBudgetUsage
+// accumulates energy and that the cap is enforced independently of dollars.
+func TestGovernanceStore_BumpBudgetUsage_EnergyJoules(t *testing.T) {
+	logger := NewMockLogger()
+	maxEnergy := 1000.0
+	budget := &configstoreTables.TableBudget{
+		ID:               "energy-budget",
+		MaxLimit:         1e6, // huge dollar cap, irrelevant to this test
+		MaxEnergyJoules:  &maxEnergy,
+		CurrentUsage:     0,
+		CurrentEnergyJoules: 0,
+		ResetDuration:    "1d",
+		LastReset:        time.Now(),
+	}
+	store, err := NewLocalGovernanceStore(context.Background(), logger, nil, &configstore.GovernanceConfig{
+		Budgets: []configstoreTables.TableBudget{*budget},
+	}, nil)
+	require.NoError(t, err)
+
+	// First call: 400 joules, well under cap.
+	require.NoError(t, store.BumpBudgetUsage(context.Background(), "energy-budget", 0.10, 400.0))
+	got := store.LoadBudget(context.Background(), "energy-budget")
+	require.NotNil(t, got)
+	if got.CurrentEnergyJoules != 400.0 {
+		t.Errorf("CurrentEnergyJoules after 1st bump: got %v, want 400", got.CurrentEnergyJoules)
+	}
+	if got.CurrentUsage != 0.10 {
+		t.Errorf("CurrentUsage after 1st bump: got %v, want 0.10", got.CurrentUsage)
+	}
+
+	// Second call: 700 more joules, total 1100 > 1000 cap. Should be accepted
+	// (BumpBudgetUsage is a recorder; enforcement happens at CheckBudget time).
+	require.NoError(t, store.BumpBudgetUsage(context.Background(), "energy-budget", 0.05, 700.0))
+	got = store.LoadBudget(context.Background(), "energy-budget")
+	if got.CurrentEnergyJoules != 1100.0 {
+		t.Errorf("CurrentEnergyJoules after 2nd bump: got %v, want 1100", got.CurrentEnergyJoules)
+	}
+
+	// Third call with 0 energy: counter should NOT move.
+	require.NoError(t, store.BumpBudgetUsage(context.Background(), "energy-budget", 0.01, 0))
+	got = store.LoadBudget(context.Background(), "energy-budget")
+	if got.CurrentEnergyJoules != 1100.0 {
+		t.Errorf("zero-energy bump should not move counter: got %v, want 1100", got.CurrentEnergyJoules)
+	}
+}
+
+// TestGovernanceStore_CheckBudget_EnergyCapEnforced proves that CheckBudget
+// returns DecisionEnergyBudgetExceeded when accumulated energy meets/exceeds
+// MaxEnergyJoules, independently of the dollar cap.
+func TestGovernanceStore_CheckBudget_EnergyCapEnforced(t *testing.T) {
+	logger := NewMockLogger()
+	maxEnergy := 1000.0
+	budget := &configstoreTables.TableBudget{
+		ID:                  "energy-cap",
+		MaxLimit:            1e6, // huge dollar cap, irrelevant here
+		MaxEnergyJoules:     &maxEnergy,
+		CurrentUsage:        0,
+		CurrentEnergyJoules: 950,
+		ResetDuration:       "1d",
+		LastReset:           time.Now(),
+	}
+	store, err := NewLocalGovernanceStore(context.Background(), logger, nil, &configstore.GovernanceConfig{
+		Budgets: []configstoreTables.TableBudget{*budget},
+	}, nil)
+	require.NoError(t, err)
+
+	// Under the cap -> allow.
+	decision, err := store.CheckBudget(context.Background(),
+		EntityWiseBudgets{"VK": {budget}}, nil, nil)
+	require.NoError(t, err)
+	if decision != DecisionAllow {
+		t.Errorf("under cap: got %v, want %v", decision, DecisionAllow)
+	}
+
+	// Push over the cap.
+	store.budgets.Store("energy-cap", &configstoreTables.TableBudget{
+		ID:                  "energy-cap",
+		MaxLimit:            1e6,
+		MaxEnergyJoules:     &maxEnergy,
+		CurrentUsage:        0,
+		CurrentEnergyJoules: 1000,
+		ResetDuration:       "1d",
+		LastReset:           time.Now(),
+	})
+	overBudget := store.LoadBudget(context.Background(), "energy-cap")
+	decision, err = store.CheckBudget(context.Background(),
+		EntityWiseBudgets{"VK": {overBudget}}, nil, nil)
+	if decision != DecisionEnergyBudgetExceeded {
+		t.Errorf("over cap: got %v, want %v", decision, DecisionEnergyBudgetExceeded)
+	}
+	if err == nil {
+		t.Errorf("expected error message explaining the energy violation")
+	}
+}
+
+// TestGovernanceStore_CheckBudget_NoEnergyCapSkipsCheck proves that a budget
+// without MaxEnergyJoules is NOT flagged even if it has accumulated energy
+// (legacy behavior preserved).
+func TestGovernanceStore_CheckBudget_NoEnergyCapSkipsCheck(t *testing.T) {
+	logger := NewMockLogger()
+	budget := &configstoreTables.TableBudget{
+		ID:                  "no-energy-cap",
+		MaxLimit:            100.0,
+		MaxEnergyJoules:     nil, // no energy cap
+		CurrentUsage:        50,
+		CurrentEnergyJoules: 999999, // accumulated energy from a previous cap; should not be checked
+		ResetDuration:       "1d",
+		LastReset:           time.Now(),
+	}
+	store, err := NewLocalGovernanceStore(context.Background(), logger, nil, &configstore.GovernanceConfig{
+		Budgets: []configstoreTables.TableBudget{*budget},
+	}, nil)
+	require.NoError(t, err)
+	decision, err := store.CheckBudget(context.Background(),
+		EntityWiseBudgets{"VK": {budget}}, nil, nil)
+	require.NoError(t, err)
+	if decision != DecisionAllow {
+		t.Errorf("no cap configured: got %v, want %v", decision, DecisionAllow)
+	}
 }

@@ -26,6 +26,17 @@ ECHO := printf '%b\n'
 # nvm requires bash-compatible shell semantics; /bin/sh is dash on some Linux distros.
 SHELL := /usr/bin/env bash
 
+# `go install` drops binaries into $(go env GOPATH)/bin which isn't always in
+# the user's PATH. Prepend it so recipes that shell out to air/pulse/dlv/etc. find them.
+export PATH := $(PATH):$(shell go env GOPATH 2>/dev/null)/bin
+
+# Force Go's pure-Go net/user resolvers. On glibc >=2.34 the cgo DNS bridge
+# references `__res_search` from libc, but Go's cgo link line adds `-lresolv`
+# first; on distros where libresolv is a stub (Fedora 43+, etc.) linking fails.
+# netgo/osusergo replace those cgo bridges with pure-Go equivalents while
+# leaving CGO_ENABLED=1 for deps that genuinely need cgo (e.g. mattn/go-sqlite3).
+export GOFLAGS := -tags=netgo,osusergo
+
 # Ensures the Node version pinned in .nvmrc is active before any npm/node call.
 # nvm is a shell function, so each recipe that needs it must inline this snippet
 # via `$(USE_NODE); <your command>`.
@@ -84,19 +95,19 @@ install-ui: cleanup-enterprise
 	@$(ECHO) "$(GREEN)UI deps are in sync$(NC)"
 
 install-air: ## Install air for hot reloading (if not already installed)
-	@which air > /dev/null || ($(ECHO) "$(YELLOW)Installing air for hot reloading...$(NC)" && go install github.com/air-verse/air@latest)
+	@which air > /dev/null || ($(ECHO) "$(YELLOW)Installing air for hot reloading...$(NC)" && CGO_ENABLED=0 go install github.com/air-verse/air@latest)
 	@$(ECHO) "$(GREEN)Air is ready$(NC)"
 
 install-pulse: ## Install pulse for hot reloading (if not already installed)
-	@which pulse > /dev/null || ($(ECHO) "$(YELLOW)Installing pulse for hot reloading...$(NC)" && go install github.com/Pratham-Mishra04/pulse@latest)
+	@which pulse > /dev/null || ($(ECHO) "$(YELLOW)Installing pulse for hot reloading...$(NC)" && CGO_ENABLED=0 go install github.com/Pratham-Mishra04/pulse@latest)
 	@$(ECHO) "$(GREEN)Pulse is ready$(NC)"
 
 install-delve: ## Install delve for debugging (if not already installed)
-	@which dlv > /dev/null || ($(ECHO) "$(YELLOW)Installing delve for debugging...$(NC)" && go install github.com/go-delve/delve/cmd/dlv@latest)
+	@which dlv > /dev/null || ($(ECHO) "$(YELLOW)Installing delve for debugging...$(NC)" && CGO_ENABLED=0 go install github.com/go-delve/delve/cmd/dlv@latest)
 	@$(ECHO) "$(GREEN)Delve is ready$(NC)"
 
 install-gotestsum: ## Install gotestsum for test reporting (if not already installed)
-	@which gotestsum > /dev/null || ($(ECHO) "$(YELLOW)Installing gotestsum for test reporting...$(NC)" && go install gotest.tools/gotestsum@latest)
+	@which gotestsum > /dev/null || ($(ECHO) "$(YELLOW)Installing gotestsum for test reporting...$(NC)" && CGO_ENABLED=0 go install gotest.tools/gotestsum@latest)
 	@$(ECHO) "$(GREEN)gotestsum is ready$(NC)"
 
 install-junit-viewer: ## Install junit-viewer for HTML report generation (if not already installed)

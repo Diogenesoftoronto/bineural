@@ -506,6 +506,10 @@ func HandleOpenAITextCompletionStreaming(
 
 	// Store provider response headers in context before status check so error responses also forward them
 	ctx.SetValue(schemas.BifrostContextKeyProviderResponseHeaders, providerUtils.ExtractProviderResponseHeaders(resp))
+	energyConsumption := providerUtils.ExtractEnergyConsumptionFromHeaders(resp)
+	if energyConsumption != nil {
+		ctx.SetValue(schemas.BifrostContextKeyProviderEnergyConsumption, energyConsumption)
+	}
 
 	// Check for HTTP errors
 	if resp.StatusCode() != fasthttp.StatusOK {
@@ -705,6 +709,9 @@ func HandleOpenAITextCompletionStreaming(
 			}
 		}
 
+		if energyConsumption != nil {
+			usage.Energy = energyConsumption
+		}
 		response := providerUtils.CreateBifrostTextCompletionChunkResponse(messageID, usage, finishReason, chunkIndex, schemas.TextCompletionStreamRequest)
 		if postResponseConverter != nil {
 			response = postResponseConverter(response)
@@ -837,6 +844,13 @@ func HandleOpenAIChatCompletionRequest(
 	// Extract provider response headers early so they're available on error paths too
 	providerResponseHeaders := providerUtils.ExtractProviderResponseHeaders(resp)
 	ctx.SetValue(schemas.BifrostContextKeyProviderResponseHeaders, providerResponseHeaders)
+	// Capture provider-reported energy consumption (e.g. Neuralwatt x-energy-used header)
+	// into context so the postHookWorker can attribute it to the budget. Headers remain
+	// on the response object at this point, before body consumption.
+	energyConsumption := providerUtils.ExtractEnergyConsumptionFromHeaders(resp)
+	if energyConsumption != nil {
+		ctx.SetValue(schemas.BifrostContextKeyProviderEnergyConsumption, energyConsumption)
+	}
 
 	// Handle error response
 	if resp.StatusCode() != fasthttp.StatusOK {
@@ -854,11 +868,13 @@ func HandleOpenAIChatCompletionRequest(
 		return nil, providerUtils.EnrichError(ctx, finalErr, jsonData, nil, sendBackRawRequest, sendBackRawResponse)
 	}
 	if lpResult != nil {
-		return &schemas.BifrostChatResponse{
+		response := &schemas.BifrostChatResponse{
 			Model:       request.Model,
 			Usage:       lpResult.Usage,
-			ExtraFields: schemas.BifrostResponseExtraFields{Latency: lpResult.Latency},
-		}, nil
+			ExtraFields: schemas.BifrostResponseExtraFields{Latency: lpResult.Latency, ProviderResponseHeaders: providerResponseHeaders},
+		}
+		providerUtils.ApplyEnergyConsumptionToChatResponse(response, energyConsumption)
+		return response, nil
 	}
 	response := &schemas.BifrostChatResponse{}
 	response.ExtraFields.ProviderResponseHeaders = providerResponseHeaders
@@ -876,6 +892,9 @@ func HandleOpenAIChatCompletionRequest(
 	}
 
 	response.ExtraFields.Latency = latency.Milliseconds()
+	if energyConsumption != nil {
+		providerUtils.ApplyEnergyConsumptionToChatResponse(response, energyConsumption)
+	}
 
 	// Set raw request if enabled
 	if providerUtils.ShouldSendBackRawRequest(ctx, sendBackRawRequest) {
@@ -1044,6 +1063,10 @@ func HandleOpenAIChatCompletionStreaming(
 
 	// Store provider response headers in context before status check so error responses also forward them
 	ctx.SetValue(schemas.BifrostContextKeyProviderResponseHeaders, providerUtils.ExtractProviderResponseHeaders(resp))
+	energyConsumption := providerUtils.ExtractEnergyConsumptionFromHeaders(resp)
+	if energyConsumption != nil {
+		ctx.SetValue(schemas.BifrostContextKeyProviderEnergyConsumption, energyConsumption)
+	}
 
 	// Check for HTTP errors
 	if resp.StatusCode() != fasthttp.StatusOK {
@@ -1206,6 +1229,12 @@ func HandleOpenAIChatCompletionStreaming(
 					}
 
 					if response.Type == schemas.ResponsesStreamResponseTypeCompleted || response.Type == schemas.ResponsesStreamResponseTypeIncomplete {
+						if energyConsumption != nil && response.Response != nil {
+							if response.Response.Usage == nil {
+								response.Response.Usage = &schemas.ResponsesResponseUsage{}
+							}
+							response.Response.Usage.Energy = energyConsumption
+						}
 						// Set raw request if enabled
 						if sendBackRawRequest {
 							providerUtils.ParseAndSetRawRequest(&response.ExtraFields, jsonBody)
@@ -1319,6 +1348,9 @@ func HandleOpenAIChatCompletionStreaming(
 			finalFinishReason := finishReason
 			if forwardedTerminalFinishReason {
 				finalFinishReason = nil
+			}
+			if energyConsumption != nil {
+				usage.Energy = energyConsumption
 			}
 			response := providerUtils.CreateBifrostChatCompletionChunkResponse(messageID, usage, finalFinishReason, chunkIndex, modelName, created)
 			if postResponseConverter != nil {
@@ -1447,6 +1479,10 @@ func HandleOpenAIResponsesRequest(
 	// Extract provider response headers early so they're available on error paths too
 	providerResponseHeaders := providerUtils.ExtractProviderResponseHeaders(resp)
 	ctx.SetValue(schemas.BifrostContextKeyProviderResponseHeaders, providerResponseHeaders)
+	energyConsumption := providerUtils.ExtractEnergyConsumptionFromHeaders(resp)
+	if energyConsumption != nil {
+		ctx.SetValue(schemas.BifrostContextKeyProviderEnergyConsumption, energyConsumption)
+	}
 
 	// Handle error response
 	if resp.StatusCode() != fasthttp.StatusOK {
@@ -1464,10 +1500,14 @@ func HandleOpenAIResponsesRequest(
 		return nil, providerUtils.EnrichError(ctx, finalErr, jsonData, nil, sendBackRawRequest, sendBackRawResponse)
 	}
 	if lpResult != nil {
-		return &schemas.BifrostResponsesResponse{
+		response := &schemas.BifrostResponsesResponse{
 			Model:       request.Model,
 			ExtraFields: schemas.BifrostResponseExtraFields{Latency: lpResult.Latency},
-		}, nil
+		}
+		if energyConsumption != nil {
+			providerUtils.ApplyEnergyConsumptionToResponsesResponse(response, energyConsumption)
+		}
+		return response, nil
 	}
 
 	response := &schemas.BifrostResponsesResponse{}
@@ -1486,6 +1526,9 @@ func HandleOpenAIResponsesRequest(
 
 	response.ExtraFields.Latency = latency.Milliseconds()
 	response.ExtraFields.ProviderResponseHeaders = providerResponseHeaders
+	if energyConsumption != nil {
+		providerUtils.ApplyEnergyConsumptionToResponsesResponse(response, energyConsumption)
+	}
 
 	// Set raw request if enabled
 	if sendBackRawRequest {
@@ -1633,6 +1676,10 @@ func HandleOpenAIResponsesStreaming(
 
 	// Store provider response headers in context before status check so error responses also forward them
 	ctx.SetValue(schemas.BifrostContextKeyProviderResponseHeaders, providerUtils.ExtractProviderResponseHeaders(resp))
+	energyConsumption := providerUtils.ExtractEnergyConsumptionFromHeaders(resp)
+	if energyConsumption != nil {
+		ctx.SetValue(schemas.BifrostContextKeyProviderEnergyConsumption, energyConsumption)
+	}
 
 	// Check for HTTP errors
 	if resp.StatusCode() != fasthttp.StatusOK {
@@ -1794,6 +1841,12 @@ func HandleOpenAIResponsesStreaming(
 
 				response.ExtraFields.ChunkIndex = response.SequenceNumber
 				if response.Type == schemas.ResponsesStreamResponseTypeCompleted || response.Type == schemas.ResponsesStreamResponseTypeIncomplete {
+					if energyConsumption != nil && response.Response != nil {
+						if response.Response.Usage == nil {
+							response.Response.Usage = &schemas.ResponsesResponseUsage{}
+						}
+						response.Response.Usage.Energy = energyConsumption
+					}
 					// Set raw request if enabled
 					if sendBackRawRequest {
 						providerUtils.ParseAndSetRawRequest(&response.ExtraFields, jsonBody)
@@ -2232,6 +2285,10 @@ func HandleOpenAISpeechStreamRequest(
 
 	// Store provider response headers in context before status check so error responses also forward them
 	ctx.SetValue(schemas.BifrostContextKeyProviderResponseHeaders, providerUtils.ExtractProviderResponseHeaders(resp))
+	energyConsumption := providerUtils.ExtractEnergyConsumptionFromHeaders(resp)
+	if energyConsumption != nil {
+		ctx.SetValue(schemas.BifrostContextKeyProviderEnergyConsumption, energyConsumption)
+	}
 
 	// Check for HTTP errors
 	if resp.StatusCode() != fasthttp.StatusOK {
@@ -2670,6 +2727,10 @@ func HandleOpenAITranscriptionStreamRequest(
 
 	// Store provider response headers in context before status check so error responses also forward them
 	ctx.SetValue(schemas.BifrostContextKeyProviderResponseHeaders, providerUtils.ExtractProviderResponseHeaders(resp))
+	energyConsumption := providerUtils.ExtractEnergyConsumptionFromHeaders(resp)
+	if energyConsumption != nil {
+		ctx.SetValue(schemas.BifrostContextKeyProviderEnergyConsumption, energyConsumption)
+	}
 
 	// Check for HTTP errors
 	if resp.StatusCode() != fasthttp.StatusOK {
@@ -3105,6 +3166,10 @@ func HandleOpenAIImageGenerationStreaming(
 
 	// Store provider response headers in context before status check so error responses also forward them
 	ctx.SetValue(schemas.BifrostContextKeyProviderResponseHeaders, providerUtils.ExtractProviderResponseHeaders(resp))
+	energyConsumption := providerUtils.ExtractEnergyConsumptionFromHeaders(resp)
+	if energyConsumption != nil {
+		ctx.SetValue(schemas.BifrostContextKeyProviderEnergyConsumption, energyConsumption)
+	}
 
 	// Check for HTTP errors
 	if resp.StatusCode() != fasthttp.StatusOK {
@@ -4338,6 +4403,10 @@ func HandleOpenAIImageEditStreamRequest(
 	}
 	// Store provider response headers in context before status check so error responses also forward them
 	ctx.SetValue(schemas.BifrostContextKeyProviderResponseHeaders, providerUtils.ExtractProviderResponseHeaders(resp))
+	energyConsumption := providerUtils.ExtractEnergyConsumptionFromHeaders(resp)
+	if energyConsumption != nil {
+		ctx.SetValue(schemas.BifrostContextKeyProviderEnergyConsumption, energyConsumption)
+	}
 
 	// Check for HTTP errors
 	if resp.StatusCode() != fasthttp.StatusOK {

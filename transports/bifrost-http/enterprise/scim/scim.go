@@ -36,11 +36,11 @@ type SCIMGroup struct {
 }
 
 type SCIMPlugin struct {
-	mu        sync.RWMutex
-	users     map[string]*SCIMUser
-	groups    map[string]*SCIMGroup
-	enabled   bool
-	logger    schemas.Logger
+	mu      sync.RWMutex
+	users   map[string]*SCIMUser
+	groups  map[string]*SCIMGroup
+	enabled bool
+	logger  schemas.Logger
 }
 
 func Init(config any, logger schemas.Logger) *SCIMPlugin {
@@ -125,11 +125,17 @@ func (p *SCIMPlugin) UpdateUser(id string, updates map[string]any) error {
 	if name, ok := updates["display_name"].(string); ok {
 		u.DisplayName = name
 	}
+	if userName, ok := updates["user_name"].(string); ok {
+		u.UserName = userName
+	}
 	if email, ok := updates["email"].(string); ok {
 		u.Email = email
 	}
 	if active, ok := updates["active"].(bool); ok {
 		u.Active = active
+	}
+	if groups, ok := updates["groups"].([]string); ok {
+		u.Groups = groups
 	}
 	u.UpdatedAt = time.Now()
 	return nil
@@ -165,6 +171,57 @@ func (p *SCIMPlugin) GetGroup(id string) (*SCIMGroup, bool) {
 	defer p.mu.RUnlock()
 	g, ok := p.groups[id]
 	return g, ok
+}
+
+func (p *SCIMPlugin) ListGroups(filter string, offset, limit int) []*SCIMGroup {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	result := make([]*SCIMGroup, 0)
+	skipped := 0
+	for _, g := range p.groups {
+		if filter != "" && g.DisplayName != filter {
+			continue
+		}
+		if skipped < offset {
+			skipped++
+			continue
+		}
+		if limit > 0 && len(result) >= limit {
+			break
+		}
+		result = append(result, g)
+	}
+	return result
+}
+
+func (p *SCIMPlugin) UpdateGroup(id string, updates map[string]any) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	g, ok := p.groups[id]
+	if !ok {
+		return fmt.Errorf("group not found: %s", id)
+	}
+
+	if displayName, ok := updates["display_name"].(string); ok {
+		g.DisplayName = displayName
+	}
+	if members, ok := updates["members"].([]string); ok {
+		g.Members = members
+	}
+	return nil
+}
+
+func (p *SCIMPlugin) DeleteGroup(id string) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if _, ok := p.groups[id]; !ok {
+		return fmt.Errorf("group not found: %s", id)
+	}
+	delete(p.groups, id)
+	return nil
 }
 
 func (p *SCIMPlugin) AddGroupMember(groupID, userID string) error {

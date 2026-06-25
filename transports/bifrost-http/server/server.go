@@ -29,6 +29,7 @@ import (
 	"github.com/maximhq/bifrost/plugins/semanticcache"
 	"github.com/maximhq/bifrost/plugins/telemetry"
 	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/quotatracker"
+	"github.com/maximhq/bifrost/transports/bifrost-http/enterprise/scim"
 	"github.com/maximhq/bifrost/transports/bifrost-http/handlers"
 	"github.com/maximhq/bifrost/transports/bifrost-http/integrations"
 	"github.com/maximhq/bifrost/transports/bifrost-http/lib"
@@ -1157,6 +1158,13 @@ func (s *BifrostHTTPServer) RegisterAPIRoutes(ctx context.Context, callbacks Ser
 			// SSO handler
 			ssoHandler := handlers.NewSSOHandler(s.Config.ConfigStore)
 			ssoHandler.RegisterRoutes(s.Router, middlewares...)
+
+			// SCIM handler
+			scimPlugin, _ := lib.FindPluginAs[*scim.SCIMPlugin](s.Config, scim.PluginName)
+			if scimPlugin != nil {
+				scimHandler := handlers.NewSCIMHandler(scimPlugin)
+				scimHandler.RegisterRoutes(s.Router, middlewares...)
+			}
 		}
 		// Audit handler
 		if s.Config.LogsStore != nil {

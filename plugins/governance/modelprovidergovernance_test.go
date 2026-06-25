@@ -447,7 +447,7 @@ func TestStore_UpdateProviderBudgetUsage_NoConfig(t *testing.T) {
 	store, err := NewLocalGovernanceStore(context.Background(), logger, nil, &configstore.GovernanceConfig{}, nil)
 	require.NoError(t, err)
 
-	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "", schemas.OpenAI, 10.0)
+	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "", schemas.OpenAI, 10.0, 0)
 	assert.NoError(t, err, "Should not error when no provider config exists")
 }
 
@@ -461,7 +461,7 @@ func TestStore_UpdateProviderBudgetUsage_UpdatesUsage(t *testing.T) {
 	}, nil)
 	require.NoError(t, err)
 
-	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "", schemas.OpenAI, 10.0)
+	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "", schemas.OpenAI, 10.0, 0)
 	assert.NoError(t, err, "Should successfully update provider budget usage")
 
 	// Verify usage was updated
@@ -469,7 +469,7 @@ func TestStore_UpdateProviderBudgetUsage_UpdatesUsage(t *testing.T) {
 	assert.NoError(t, err, "Should still be within limit after first update")
 
 	// Update again to exceed
-	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "", schemas.OpenAI, 95.0)
+	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "", schemas.OpenAI, 95.0, 0)
 	assert.NoError(t, err, "Should successfully update provider budget usage even when exceeding")
 
 	// Now should be exceeded
@@ -564,7 +564,7 @@ func TestStore_UpdateModelBudgetUsage_NoConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	provider := schemas.OpenAI
-	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "gpt-4", provider, 10.0)
+	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "gpt-4", provider, 10.0, 0)
 	assert.NoError(t, err, "Should not error when no model config exists")
 }
 
@@ -579,7 +579,7 @@ func TestStore_UpdateModelBudgetUsage_ModelOnly_UpdatesUsage(t *testing.T) {
 	require.NoError(t, err)
 
 	provider := schemas.OpenAI
-	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "gpt-4", provider, 10.0)
+	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "gpt-4", provider, 10.0, 0)
 	assert.NoError(t, err, "Should successfully update model budget usage")
 
 	// Verify usage was updated
@@ -587,7 +587,7 @@ func TestStore_UpdateModelBudgetUsage_ModelOnly_UpdatesUsage(t *testing.T) {
 	assert.NoError(t, err, "Should still be within limit after first update")
 
 	// Update again to exceed
-	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "gpt-4", provider, 95.0)
+	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "gpt-4", provider, 95.0, 0)
 	assert.NoError(t, err, "Should successfully update model budget usage even when exceeding")
 
 	// Now should be exceeded
@@ -612,7 +612,7 @@ func TestStore_UpdateModelBudgetUsage_ModelWithProvider_UpdatesBoth(t *testing.T
 	require.NoError(t, err)
 
 	provider := schemas.OpenAI
-	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "gpt-4", provider, 10.0)
+	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "gpt-4", provider, 10.0, 0)
 	assert.NoError(t, err, "Should successfully update both model-only and model+provider budget usage")
 
 	// Both budgets should be updated
@@ -621,7 +621,7 @@ func TestStore_UpdateModelBudgetUsage_ModelWithProvider_UpdatesBoth(t *testing.T
 	assert.NoError(t, err, "Should still be within limit")
 
 	// Update to exceed model-only budget
-	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "gpt-4", provider, 95.0)
+	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "gpt-4", provider, 95.0, 0)
 	assert.NoError(t, err, "Should successfully update model budget usage even when exceeding")
 
 	// Now model-only budget should be exceeded
@@ -2016,11 +2016,11 @@ func TestStore_UpdateModelBudgetUsage_CrossProviderModelMatch(t *testing.T) {
 	require.NoError(t, err)
 
 	// Update usage with prefixed model name
-	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "openai/gpt-4o", schemas.OpenRouter, 50.0)
+	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "openai/gpt-4o", schemas.OpenRouter, 50.0, 0)
 	assert.NoError(t, err, "Should successfully update budget usage via cross-provider match")
 
 	// Now exceed the budget
-	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "openai/gpt-4o", schemas.OpenRouter, 55.0)
+	err = store.UpdateProviderAndModelBudgetUsageInMemory(context.Background(), "openai/gpt-4o", schemas.OpenRouter, 55.0, 0)
 	assert.NoError(t, err)
 
 	// Budget should now be exceeded

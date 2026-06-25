@@ -77,12 +77,12 @@
     LOG_STYLE=$ARG_LOG_STYLE \
     APP_DIR=$ARG_APP_DIR
   
-  # Go runtime performance tuning (override at runtime for your workload)
-  # GOGC: GC target percentage. Higher = less frequent GC, more memory usage.
-  #       Default: 100. For high-throughput with available memory, try 200-400.
-  # GOMEMLIMIT: Soft memory limit for Go runtime. Set to ~90% of container memory limit.
-  #             Example: "1800MiB" for a 2GB container, "3600MiB" for 4GB.
-  #             When set, Go will be more aggressive about GC as it approaches this limit.
+  # Go runtime memory tuning. Leave these empty to use the auto-tuning in
+  # docker-entrypoint.sh, which (a) sets GOMEMLIMIT to ~90% of the container's
+  # cgroup memory limit and (b) defaults GOGC to 75 for a smaller resident heap.
+  # Set either var explicitly here or at runtime to override the auto-tuning:
+  #   GOGC        GC target %. Lower = less RAM, more CPU. Higher = more RAM, less CPU.
+  #   GOMEMLIMIT  Soft heap cap, e.g. "1800MiB" for a 2GB container.
   # Note: GOMAXPROCS is automatically detected from cgroup CPU limits via automaxprocs.
   ENV GOGC="" \
     GOMEMLIMIT=""

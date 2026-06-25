@@ -15,6 +15,11 @@ type TableBudget struct {
 	LastReset     time.Time `gorm:"index" json:"last_reset"`                         // Last time budget was reset
 	CurrentUsage  float64   `gorm:"default:0" json:"current_usage"`                  // Current usage in dollars
 
+	// Optional energy cap (joules). Captured from provider-reported energy
+	// consumption (e.g. x-energy-used header from Neuralwatt). nil = no cap.
+	MaxEnergyJoules     *float64 `gorm:"default:null" json:"max_energy_joules,omitempty"`
+	CurrentEnergyJoules float64  `gorm:"default:0" json:"current_energy_joules"`
+
 	// Owner FKs: a budget belongs to at most one Team, one VK, or one ProviderConfig
 	TeamID           *string `gorm:"type:varchar(255);index" json:"team_id,omitempty"`
 	VirtualKeyID     *string `gorm:"type:varchar(255);index" json:"virtual_key_id,omitempty"`
@@ -58,6 +63,11 @@ func (b *TableBudget) BeforeSave(tx *gorm.DB) error {
 	// Validate that MaxLimit is not negative (budgets should be positive)
 	if b.MaxLimit < 0 {
 		return fmt.Errorf("budget max_limit cannot be negative: %.2f", b.MaxLimit)
+	}
+	// Validate that MaxEnergyJoules (when set) is not negative.
+	// nil means "no energy cap"; < 0 is rejected.
+	if b.MaxEnergyJoules != nil && *b.MaxEnergyJoules < 0 {
+		return fmt.Errorf("budget max_energy_joules cannot be negative: %.4f", *b.MaxEnergyJoules)
 	}
 
 	return nil

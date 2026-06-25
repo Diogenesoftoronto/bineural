@@ -117,16 +117,18 @@ type UpdateVirtualKeyRequest struct {
 
 // CreateBudgetRequest represents the request body for creating a budget
 type CreateBudgetRequest struct {
-	MaxLimit        float64 `json:"max_limit" validate:"required"`      // Maximum budget in dollars
-	ResetDuration   string  `json:"reset_duration" validate:"required"` // e.g., "30s", "5m", "1h", "1d", "1w", "1M"
-	CalendarAligned bool    `json:"calendar_aligned,omitempty"`         // Snap resets to calendar boundaries (day/week/month/year)
+	MaxLimit        float64  `json:"max_limit" validate:"required"`      // Maximum budget in dollars
+	ResetDuration   string   `json:"reset_duration" validate:"required"` // e.g., "30s", "5m", "1h", "1d", "1w", "1M"
+	CalendarAligned bool     `json:"calendar_aligned,omitempty"`         // Snap resets to calendar boundaries (day/week/month/year)
+	MaxEnergyJoules *float64 `json:"max_energy_joules,omitempty"`        // Optional energy cap in joules (nil = no cap)
 }
 
 // UpdateBudgetRequest represents the request body for updating a budget
 type UpdateBudgetRequest struct {
 	MaxLimit        *float64 `json:"max_limit,omitempty"`
 	ResetDuration   *string  `json:"reset_duration,omitempty"`
-	CalendarAligned *bool    `json:"calendar_aligned,omitempty"` // When switching to true, current usage is reset to 0
+	CalendarAligned *bool    `json:"calendar_aligned,omitempty"`  // When switching to true, current usage is reset to 0
+	MaxEnergyJoules *float64 `json:"max_energy_joules,omitempty"` // nil leaves existing value untouched
 }
 
 // RoutingTarget represents a single weighted routing target within a rule.
@@ -526,6 +528,7 @@ func (h *GovernanceHandler) createVirtualKey(ctx *fasthttp.RequestCtx) {
 				budget := configstoreTables.TableBudget{
 					ID:            uuid.NewString(),
 					MaxLimit:      b.MaxLimit,
+					MaxEnergyJoules: b.MaxEnergyJoules,
 					ResetDuration: b.ResetDuration,
 					LastReset:     budgetLastReset(vk.CalendarAligned, b.ResetDuration),
 					CurrentUsage:  0,
@@ -614,6 +617,7 @@ func (h *GovernanceHandler) createVirtualKey(ctx *fasthttp.RequestCtx) {
 						budget := configstoreTables.TableBudget{
 							ID:               uuid.NewString(),
 							MaxLimit:         b.MaxLimit,
+							MaxEnergyJoules: b.MaxEnergyJoules,
 							ResetDuration:    b.ResetDuration,
 							LastReset:        budgetLastReset(vk.CalendarAligned, b.ResetDuration),
 							CurrentUsage:     0,
@@ -819,6 +823,7 @@ func (h *GovernanceHandler) updateVirtualKey(ctx *fasthttp.RequestCtx) {
 					budget := configstoreTables.TableBudget{
 						ID:            uuid.NewString(),
 						MaxLimit:      b.MaxLimit,
+						MaxEnergyJoules: b.MaxEnergyJoules,
 						ResetDuration: b.ResetDuration,
 						LastReset:     budgetLastReset(vk.CalendarAligned, b.ResetDuration),
 						CurrentUsage:  0,
@@ -988,6 +993,7 @@ func (h *GovernanceHandler) updateVirtualKey(ctx *fasthttp.RequestCtx) {
 							budget := configstoreTables.TableBudget{
 								ID:               uuid.NewString(),
 								MaxLimit:         b.MaxLimit,
+								MaxEnergyJoules: b.MaxEnergyJoules,
 								ResetDuration:    b.ResetDuration,
 								LastReset:        budgetLastReset(vk.CalendarAligned, b.ResetDuration),
 								CurrentUsage:     0,
@@ -1079,6 +1085,7 @@ func (h *GovernanceHandler) updateVirtualKey(ctx *fasthttp.RequestCtx) {
 								budget := configstoreTables.TableBudget{
 									ID:               uuid.NewString(),
 									MaxLimit:         b.MaxLimit,
+									MaxEnergyJoules: b.MaxEnergyJoules,
 									ResetDuration:    b.ResetDuration,
 									LastReset:        budgetLastReset(vk.CalendarAligned, b.ResetDuration),
 									CurrentUsage:     0,
@@ -1465,6 +1472,7 @@ func (h *GovernanceHandler) createTeam(ctx *fasthttp.RequestCtx) {
 			budget := configstoreTables.TableBudget{
 				ID:              uuid.NewString(),
 				MaxLimit:        b.MaxLimit,
+				MaxEnergyJoules: b.MaxEnergyJoules,
 				ResetDuration:   b.ResetDuration,
 				LastReset:       budgetLastReset(b.CalendarAligned, b.ResetDuration),
 				CurrentUsage:    0,
@@ -1623,6 +1631,7 @@ func (h *GovernanceHandler) updateTeam(ctx *fasthttp.RequestCtx) {
 					budget := configstoreTables.TableBudget{
 						ID:              uuid.NewString(),
 						MaxLimit:        b.MaxLimit,
+						MaxEnergyJoules: b.MaxEnergyJoules,
 						ResetDuration:   b.ResetDuration,
 						LastReset:       budgetLastReset(b.CalendarAligned, b.ResetDuration),
 						CurrentUsage:    0,
@@ -1863,7 +1872,8 @@ func (h *GovernanceHandler) createCustomer(ctx *fasthttp.RequestCtx) {
 		if req.Budget != nil {
 			budget := configstoreTables.TableBudget{
 				ID:            uuid.NewString(),
-				MaxLimit:      req.Budget.MaxLimit,
+				MaxLimit:        req.Budget.MaxLimit,
+			MaxEnergyJoules: req.Budget.MaxEnergyJoules,
 				ResetDuration: req.Budget.ResetDuration,
 				LastReset:     budgetLastReset(false, req.Budget.ResetDuration),
 				CurrentUsage:  0,
@@ -1995,6 +2005,9 @@ func (h *GovernanceHandler) updateCustomer(ctx *fasthttp.RequestCtx) {
 				if req.Budget.ResetDuration != nil {
 					budget.ResetDuration = *req.Budget.ResetDuration
 				}
+				if req.Budget.MaxEnergyJoules != nil {
+					budget.MaxEnergyJoules = req.Budget.MaxEnergyJoules
+				}
 				if err := validateBudget(&budget); err != nil {
 					return err
 				}
@@ -2015,7 +2028,8 @@ func (h *GovernanceHandler) updateCustomer(ctx *fasthttp.RequestCtx) {
 				}
 				budget := configstoreTables.TableBudget{
 					ID:            uuid.NewString(),
-					MaxLimit:      *req.Budget.MaxLimit,
+					MaxLimit:        *req.Budget.MaxLimit,
+			MaxEnergyJoules: req.Budget.MaxEnergyJoules,
 					ResetDuration: *req.Budget.ResetDuration,
 					LastReset:     budgetLastReset(false, *req.Budget.ResetDuration),
 					CurrentUsage:  0,
@@ -2418,7 +2432,8 @@ func (h *GovernanceHandler) createModelConfig(ctx *fasthttp.RequestCtx) {
 		if req.Budget != nil {
 			budget := configstoreTables.TableBudget{
 				ID:            uuid.NewString(),
-				MaxLimit:      req.Budget.MaxLimit,
+				MaxLimit:        req.Budget.MaxLimit,
+			MaxEnergyJoules: req.Budget.MaxEnergyJoules,
 				ResetDuration: req.Budget.ResetDuration,
 				LastReset:     budgetLastReset(false, req.Budget.ResetDuration),
 				CurrentUsage:  0,
@@ -2525,6 +2540,9 @@ func (h *GovernanceHandler) updateModelConfig(ctx *fasthttp.RequestCtx) {
 				if req.Budget.ResetDuration != nil {
 					budget.ResetDuration = *req.Budget.ResetDuration
 				}
+				if req.Budget.MaxEnergyJoules != nil {
+					budget.MaxEnergyJoules = req.Budget.MaxEnergyJoules
+				}
 				if err := validateBudget(&budget); err != nil {
 					return err
 				}
@@ -2545,7 +2563,8 @@ func (h *GovernanceHandler) updateModelConfig(ctx *fasthttp.RequestCtx) {
 				}
 				budget := configstoreTables.TableBudget{
 					ID:            uuid.NewString(),
-					MaxLimit:      *req.Budget.MaxLimit,
+					MaxLimit:        *req.Budget.MaxLimit,
+			MaxEnergyJoules: req.Budget.MaxEnergyJoules,
 					ResetDuration: *req.Budget.ResetDuration,
 					LastReset:     budgetLastReset(false, *req.Budget.ResetDuration),
 					CurrentUsage:  0,
@@ -2787,6 +2806,9 @@ func (h *GovernanceHandler) updateProviderGovernance(ctx *fasthttp.RequestCtx) {
 				if req.Budget.ResetDuration != nil {
 					budget.ResetDuration = *req.Budget.ResetDuration
 				}
+				if req.Budget.MaxEnergyJoules != nil {
+					budget.MaxEnergyJoules = req.Budget.MaxEnergyJoules
+				}
 				if err := validateBudget(&budget); err != nil {
 					return err
 				}
@@ -2801,7 +2823,8 @@ func (h *GovernanceHandler) updateProviderGovernance(ctx *fasthttp.RequestCtx) {
 				}
 				budget := configstoreTables.TableBudget{
 					ID:            uuid.NewString(),
-					MaxLimit:      *req.Budget.MaxLimit,
+					MaxLimit:        *req.Budget.MaxLimit,
+			MaxEnergyJoules: req.Budget.MaxEnergyJoules,
 					ResetDuration: *req.Budget.ResetDuration,
 					LastReset:     budgetLastReset(false, *req.Budget.ResetDuration),
 					CurrentUsage:  0,

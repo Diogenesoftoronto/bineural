@@ -480,6 +480,14 @@ func (h *HybridLogStore) GetLatencyHistogram(ctx context.Context, filters Search
 	return h.inner.GetLatencyHistogram(ctx, filters, bucketSizeSeconds)
 }
 
+func (h *HybridLogStore) GetEnergyHistogram(ctx context.Context, filters SearchFilters, bucketSizeSeconds int64) (*EnergyHistogramResult, error) {
+	return h.inner.GetEnergyHistogram(ctx, filters, bucketSizeSeconds)
+}
+
+func (h *HybridLogStore) GetTPSHistogram(ctx context.Context, filters SearchFilters, bucketSizeSeconds int64) (*TPSHistogramResult, error) {
+	return h.inner.GetTPSHistogram(ctx, filters, bucketSizeSeconds)
+}
+
 func (h *HybridLogStore) GetProviderCostHistogram(ctx context.Context, filters SearchFilters, bucketSizeSeconds int64) (*ProviderCostHistogramResult, error) {
 	return h.inner.GetProviderCostHistogram(ctx, filters, bucketSizeSeconds)
 }

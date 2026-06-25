@@ -1009,6 +1009,17 @@ func (p *LoggerPlugin) GetLatencyHistogram(ctx context.Context, filters logstore
 	return p.store.GetLatencyHistogram(ctx, filters, bucketSizeSeconds)
 }
 
+// GetEnergyHistogram returns time-bucketed energy consumption (joules) and
+// billed-cost totals (USD) per bucket.
+func (p *LoggerPlugin) GetEnergyHistogram(ctx context.Context, filters logstore.SearchFilters, bucketSizeSeconds int64) (*logstore.EnergyHistogramResult, error) {
+	return p.store.GetEnergyHistogram(ctx, filters, bucketSizeSeconds)
+}
+
+// GetTPSHistogram returns time-bucketed tokens-per-second percentiles per bucket.
+func (p *LoggerPlugin) GetTPSHistogram(ctx context.Context, filters logstore.SearchFilters, bucketSizeSeconds int64) (*logstore.TPSHistogramResult, error) {
+	return p.store.GetTPSHistogram(ctx, filters, bucketSizeSeconds)
+}
+
 // GetProviderCostHistogram returns time-bucketed cost data with provider breakdown for the given filters
 func (p *LoggerPlugin) GetProviderCostHistogram(ctx context.Context, filters logstore.SearchFilters, bucketSizeSeconds int64) (*logstore.ProviderCostHistogramResult, error) {
 	return p.store.GetProviderCostHistogram(ctx, filters, bucketSizeSeconds)

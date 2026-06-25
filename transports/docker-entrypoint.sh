@@ -76,5 +76,34 @@ if [ $# -gt 1 ]; then
     parse_args "$@"
 fi
 
+# Auto-tune the Go runtime to the container's memory limit to reduce RAM usage.
+# If GOMEMLIMIT is not already set, read the cgroup memory limit (v2 then v1) and
+# set a soft heap cap at ~90% of it. This makes the GC reclaim memory aggressively
+# as the heap approaches the container limit instead of growing toward ~2x live heap.
+if [ -z "$GOMEMLIMIT" ]; then
+    CGROUP_MEM=""
+    if [ -r /sys/fs/cgroup/memory.max ]; then
+        # cgroup v2
+        CGROUP_MEM=$(cat /sys/fs/cgroup/memory.max 2>/dev/null)
+    elif [ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ]; then
+        # cgroup v1
+        CGROUP_MEM=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes 2>/dev/null)
+    fi
+    # "max" (v2) or an absurdly large v1 value means "unlimited" — skip in that case.
+    if [ -n "$CGROUP_MEM" ] && [ "$CGROUP_MEM" != "max" ] && [ "$CGROUP_MEM" -gt 0 ] 2>/dev/null \
+        && [ "$CGROUP_MEM" -lt 1000000000000000 ] 2>/dev/null; then
+        # 90% of the limit, in bytes
+        GOMEMLIMIT_BYTES=$(( CGROUP_MEM / 100 * 90 ))
+        export GOMEMLIMIT="${GOMEMLIMIT_BYTES}B"
+        echo "Auto-set GOMEMLIMIT=$GOMEMLIMIT (90% of cgroup limit ${CGROUP_MEM} bytes)"
+    fi
+fi
+
+# Default GOGC to a lower target than Go's default (100) to trade a little CPU for
+# a smaller resident heap. Override by setting GOGC in the environment.
+if [ -z "$GOGC" ]; then
+    export GOGC=75
+fi
+
 # Build the command with environment variables and standard arguments
 exec /app/main -app-dir "$APP_DIR" -port "$APP_PORT" -host "$APP_HOST" -log-level "$LOG_LEVEL" -log-style "$LOG_STYLE"

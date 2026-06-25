@@ -77,6 +77,8 @@ func (h *LoggingHandler) RegisterRoutes(r *router.Router, middlewares ...schemas
 	r.GET("/api/logs/histogram/cost", lib.ChainMiddlewares(h.getLogsCostHistogram, middlewares...))
 	r.GET("/api/logs/histogram/models", lib.ChainMiddlewares(h.getLogsModelHistogram, middlewares...))
 	r.GET("/api/logs/histogram/latency", lib.ChainMiddlewares(h.getLogsLatencyHistogram, middlewares...))
+	r.GET("/api/logs/histogram/energy", lib.ChainMiddlewares(h.getLogsEnergyHistogram, middlewares...))
+	r.GET("/api/logs/histogram/tps", lib.ChainMiddlewares(h.getLogsTPSHistogram, middlewares...))
 	r.GET("/api/logs/histogram/cost/by-provider", lib.ChainMiddlewares(h.getLogsProviderCostHistogram, middlewares...))
 	r.GET("/api/logs/histogram/tokens/by-provider", lib.ChainMiddlewares(h.getLogsProviderTokenHistogram, middlewares...))
 	r.GET("/api/logs/histogram/latency/by-provider", lib.ChainMiddlewares(h.getLogsProviderLatencyHistogram, middlewares...))
@@ -778,6 +780,38 @@ func (h *LoggingHandler) getLogsLatencyHistogram(ctx *fasthttp.RequestCtx) {
 	if err != nil {
 		logger.Error("failed to get latency histogram: %v", err)
 		SendError(ctx, fasthttp.StatusInternalServerError, fmt.Sprintf("Latency histogram calculation failed: %v", err))
+		return
+	}
+
+	SendJSON(ctx, result)
+}
+
+// getLogsEnergyHistogram handles GET /api/logs/histogram/energy - Get time-bucketed
+// energy (joules) + billed-cost (USD) totals per bucket.
+func (h *LoggingHandler) getLogsEnergyHistogram(ctx *fasthttp.RequestCtx) {
+	filters := parseHistogramFilters(ctx)
+	bucketSizeSeconds := calculateBucketSize(filters.StartTime, filters.EndTime)
+
+	result, err := h.logManager.GetEnergyHistogram(ctx, filters, bucketSizeSeconds)
+	if err != nil {
+		logger.Error("failed to get energy histogram: %v", err)
+		SendError(ctx, fasthttp.StatusInternalServerError, fmt.Sprintf("Energy histogram calculation failed: %v", err))
+		return
+	}
+
+	SendJSON(ctx, result)
+}
+
+// getLogsTPSHistogram handles GET /api/logs/histogram/tps - Get time-bucketed
+// tokens-per-second percentiles (avg, p50, p95, p99) per bucket.
+func (h *LoggingHandler) getLogsTPSHistogram(ctx *fasthttp.RequestCtx) {
+	filters := parseHistogramFilters(ctx)
+	bucketSizeSeconds := calculateBucketSize(filters.StartTime, filters.EndTime)
+
+	result, err := h.logManager.GetTPSHistogram(ctx, filters, bucketSizeSeconds)
+	if err != nil {
+		logger.Error("failed to get tps histogram: %v", err)
+		SendError(ctx, fasthttp.StatusInternalServerError, fmt.Sprintf("TPS histogram calculation failed: %v", err))
 		return
 	}
 

@@ -15,14 +15,15 @@ import (
 
 // UsageUpdate contains data for VK-level usage tracking
 type UsageUpdate struct {
-	VirtualKey string                `json:"virtual_key"`
-	Provider   schemas.ModelProvider `json:"provider"`
-	Model      string                `json:"model"`
-	Success    bool                  `json:"success"`
-	TokensUsed int64                 `json:"tokens_used"`
-	Cost       float64               `json:"cost"` // Cost in dollars
-	RequestID  string                `json:"request_id"`
-	UserID     string                `json:"user_id,omitempty"` // User ID for enterprise user-level governance
+	VirtualKey   string                `json:"virtual_key"`
+	Provider     schemas.ModelProvider `json:"provider"`
+	Model        string                `json:"model"`
+	Success      bool                  `json:"success"`
+	TokensUsed   int64                 `json:"tokens_used"`
+	Cost         float64               `json:"cost"`          // Cost in dollars
+	EnergyJoules float64               `json:"energy_joules"` // Energy consumption in joules (from provider response, e.g. Neuralwatt x-energy-used header)
+	RequestID    string                `json:"request_id"`
+	UserID       string                `json:"user_id,omitempty"` // User ID for enterprise user-level governance
 
 	// Streaming optimization fields
 	IsStreaming  bool `json:"is_streaming"`   // Whether this is a streaming response
@@ -92,7 +93,7 @@ func (t *UsageTracker) UpdateUsage(ctx context.Context, update *UsageUpdate) {
 	// This applies even when virtual keys are disabled or not present
 	// Guard: only update when both Provider and Model are set (MCP paths may not have these)
 	if update.Provider != "" && update.Model != "" && shouldUpdateBudget && update.Cost > 0 {
-		if err := t.store.UpdateProviderAndModelBudgetUsageInMemory(ctx, update.Model, update.Provider, update.Cost); err != nil {
+		if err := t.store.UpdateProviderAndModelBudgetUsageInMemory(ctx, update.Model, update.Provider, update.Cost, update.EnergyJoules); err != nil {
 			t.logger.Error("failed to update budget usage for model %s, provider %s: %v", update.Model, update.Provider, err)
 		}
 	}
@@ -105,7 +106,7 @@ func (t *UsageTracker) UpdateUsage(ctx context.Context, update *UsageUpdate) {
 		}
 		// Update user budget usage
 		if shouldUpdateBudget && update.Cost > 0 {
-			if err := t.store.UpdateUserBudgetUsageInMemory(ctx, update.UserID, update.Cost); err != nil {
+			if err := t.store.UpdateUserBudgetUsageInMemory(ctx, update.UserID, update.Cost, update.EnergyJoules); err != nil {
 				t.logger.Error("failed to update user budget usage for user %s: %v", update.UserID, err)
 			}
 		}
@@ -136,7 +137,7 @@ func (t *UsageTracker) UpdateUsage(ctx context.Context, update *UsageUpdate) {
 	if shouldUpdateBudget && update.Cost > 0 {
 		t.logger.Debug("updating budget usage for VK %s", vk.ID)
 		// Use atomic budget update to prevent race conditions and ensure consistency
-		if err := t.store.UpdateVirtualKeyBudgetUsageInMemory(ctx, vk, update.Provider, update.Cost); err != nil {
+		if err := t.store.UpdateVirtualKeyBudgetUsageInMemory(ctx, vk, update.Provider, update.Cost, update.EnergyJoules); err != nil {
 			t.logger.Error("failed to update budget hierarchy atomically for VK %s: %v", vk.ID, err)
 		}
 	}
@@ -183,7 +184,7 @@ func (t *UsageTracker) resetExpiredCounters(ctx context.Context) {
 	if err := t.store.DumpRateLimits(ctx, nil, nil); err != nil {
 		t.logger.Error("failed to dump rate limits to database: %v", err)
 	}
-	if err := t.store.DumpBudgets(ctx, nil); err != nil {
+	if err := t.store.DumpBudgets(ctx, nil, nil); err != nil {
 		t.logger.Error("failed to dump budgets to database: %v", err)
 	}
 }

@@ -39,6 +39,13 @@ type LogStore interface {
 	GetCostHistogram(ctx context.Context, filters SearchFilters, bucketSizeSeconds int64) (*CostHistogramResult, error)
 	GetModelHistogram(ctx context.Context, filters SearchFilters, bucketSizeSeconds int64) (*ModelHistogramResult, error)
 	GetLatencyHistogram(ctx context.Context, filters SearchFilters, bucketSizeSeconds int64) (*LatencyHistogramResult, error)
+	// GetEnergyHistogram returns time-bucketed energy consumption (joules) and
+	// billed-cost totals (USD) per bucket. Power is derived from
+	// energy_joules / bucket_size_seconds.
+	GetEnergyHistogram(ctx context.Context, filters SearchFilters, bucketSizeSeconds int64) (*EnergyHistogramResult, error)
+	// GetTPSHistogram returns time-bucketed tokens-per-second percentiles
+	// (avg, p50, p95, p99) per bucket.
+	GetTPSHistogram(ctx context.Context, filters SearchFilters, bucketSizeSeconds int64) (*TPSHistogramResult, error)
 	GetProviderCostHistogram(ctx context.Context, filters SearchFilters, bucketSizeSeconds int64) (*ProviderCostHistogramResult, error)
 	GetProviderTokenHistogram(ctx context.Context, filters SearchFilters, bucketSizeSeconds int64) (*ProviderTokenHistogramResult, error)
 	GetProviderLatencyHistogram(ctx context.Context, filters SearchFilters, bucketSizeSeconds int64) (*ProviderLatencyHistogramResult, error)

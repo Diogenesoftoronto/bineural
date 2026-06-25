@@ -1439,3 +1439,101 @@ func TestShouldSendBackRawResponse(t *testing.T) {
 		})
 	}
 }
+
+func TestExtractEnergyConsumptionFromHeaders_Neuralwatt(t *testing.T) {
+	resp := &fasthttp.Response{}
+	resp.Header.Set("x-energy-used", "0.0125")
+	resp.Header.Set("x-energy-included", "100")
+	resp.Header.Set("x-request-cost-usd", "0.0019")
+	resp.Header.Set("x-cache-savings-usd", "0.0005")
+	resp.Header.Set("x-allowance-remaining-usd", "9.9985")
+	resp.Header.Set("x-budget-remaining-usd", "49.99")
+	resp.Header.Set("x-subscription-plan", "standard")
+
+	ec := ExtractEnergyConsumptionFromHeaders(resp)
+	if ec == nil {
+		t.Fatal("expected non-nil EnergyConsumption")
+	}
+	// x-energy-used is in Wh; converted to joules by * 3600.
+	if got, want := ec.EnergyJoules, 0.0125*3600.0; got != want {
+		t.Errorf("EnergyJoules: got %v, want %v", got, want)
+	}
+	// x-energy-included is in Wh; converted to kWh by / 1000.
+	if got, want := ec.EnergyKWh, 0.1; got != want {
+		t.Errorf("EnergyKWh: got %v, want %v", got, want)
+	}
+	if ec.BilledCostUSD != 0.0019 {
+		t.Errorf("BilledCostUSD: got %v, want 0.0019", ec.BilledCostUSD)
+	}
+	if ec.CacheSavingsUSD != 0.0005 {
+		t.Errorf("CacheSavingsUSD: got %v, want 0.0005", ec.CacheSavingsUSD)
+	}
+	if ec.AllowanceRemainingUSD != 9.9985 {
+		t.Errorf("AllowanceRemainingUSD: got %v, want 9.9985", ec.AllowanceRemainingUSD)
+	}
+	if ec.BudgetRemainingUSD != 49.99 {
+		t.Errorf("BudgetRemainingUSD: got %v, want 49.99", ec.BudgetRemainingUSD)
+	}
+	if ec.AttributionMethod != "standard" {
+		t.Errorf("AttributionMethod: got %q, want %q", ec.AttributionMethod, "standard")
+	}
+}
+
+func TestExtractEnergyConsumptionFromHeaders_Empty(t *testing.T) {
+	resp := &fasthttp.Response{}
+	if ec := ExtractEnergyConsumptionFromHeaders(resp); ec != nil {
+		t.Errorf("expected nil EnergyConsumption for empty headers, got %+v", ec)
+	}
+}
+
+func TestExtractEnergyConsumptionFromHeaders_NilResponse(t *testing.T) {
+	if ec := ExtractEnergyConsumptionFromHeaders(nil); ec != nil {
+		t.Errorf("expected nil for nil response, got %+v", ec)
+	}
+}
+
+func TestApplyEnergyConsumptionToChatResponse_OverridesBilledCost(t *testing.T) {
+	ec := &schemas.EnergyConsumption{
+		EnergyJoules:  100,
+		BilledCostUSD: 0.42,
+	}
+	resp := &schemas.BifrostChatResponse{
+		Usage: &schemas.BifrostLLMUsage{
+			TotalTokens: 10,
+			Cost:        &schemas.BifrostCost{TotalCost: 0.99}, // per-token math
+		},
+	}
+	ApplyEnergyConsumptionToChatResponse(resp, ec)
+	if resp.Usage.Energy == nil {
+		t.Fatal("expected Energy to be set")
+	}
+	if resp.Usage.Energy.EnergyJoules != 100 {
+		t.Errorf("EnergyJoules: got %v, want 100", resp.Usage.Energy.EnergyJoules)
+	}
+	// BilledCostUSD should override TotalCost.
+	if resp.Usage.Cost.TotalCost != 0.42 {
+		t.Errorf("TotalCost: got %v, want 0.42 (BilledCostUSD should override)", resp.Usage.Cost.TotalCost)
+	}
+}
+
+func TestApplyEnergyConsumptionToChatResponse_NilUsage(t *testing.T) {
+	ec := &schemas.EnergyConsumption{EnergyJoules: 50}
+	resp := &schemas.BifrostChatResponse{}
+	ApplyEnergyConsumptionToChatResponse(resp, ec)
+	if resp.Usage == nil {
+		t.Fatal("expected Usage to be created")
+	}
+	if resp.Usage.Energy == nil || resp.Usage.Energy.EnergyJoules != 50 {
+		t.Errorf("Energy not set correctly: %+v", resp.Usage.Energy)
+	}
+}
+
+func TestApplyEnergyConsumptionToChatResponse_NilOrEmpty(t *testing.T) {
+	resp := &schemas.BifrostChatResponse{Usage: &schemas.BifrostLLMUsage{TotalTokens: 1}}
+	ApplyEnergyConsumptionToChatResponse(resp, nil)
+	ApplyEnergyConsumptionToChatResponse(nil, &schemas.EnergyConsumption{})
+	// No panic, no mutation.
+	if resp.Usage.Energy != nil {
+		t.Errorf("expected Energy to remain nil when ec is nil")
+	}
+}

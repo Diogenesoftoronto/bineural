@@ -191,8 +191,8 @@ type Log struct {
 	CachedReadTokens int `gorm:"default:0" json:"-"`
 
 	// Denormalized energy fields for easier querying
-	EnergyJoules  float64 `gorm:"default:0" json:"-"`
-	BilledCostUSD  float64 `gorm:"default:0" json:"-"`
+	EnergyJoules  float64 `gorm:"default:0" json:"energy_joules"`
+	BilledCostUSD  float64 `gorm:"default:0" json:"billed_cost_usd"`
 
 	CreatedAt time.Time `gorm:"index;not null" json:"created_at"`
 
@@ -1255,6 +1255,38 @@ type LatencyHistogramBucket struct {
 type LatencyHistogramResult struct {
 	Buckets           []LatencyHistogramBucket `json:"buckets"`
 	BucketSizeSeconds int64                    `json:"bucket_size_seconds"`
+}
+
+// EnergyHistogramBucket represents a single time bucket for energy + billed-cost data.
+type EnergyHistogramBucket struct {
+	Timestamp      time.Time `json:"timestamp"`
+	EnergyJoules  float64   `json:"energy_joules"`  // Sum of energy_joules across the bucket
+	BilledCostUSD  float64   `json:"billed_cost_usd"` // Sum of billed_cost_usd across the bucket
+	AvgPowerWatts  float64   `json:"avg_power_watts"`  // Mean instantaneous power (W) over the bucket
+	TotalRequests  int64     `json:"total_requests"`
+}
+
+// EnergyHistogramResult represents the energy histogram query result.
+type EnergyHistogramResult struct {
+	Buckets           []EnergyHistogramBucket `json:"buckets"`
+	BucketSizeSeconds int64                    `json:"bucket_size_seconds"`
+}
+
+// TPSHistogramBucket represents a single time bucket for tokens-per-second data.
+type TPSHistogramBucket struct {
+	Timestamp         time.Time `json:"timestamp"`
+	AvgTokensPerSec   float64   `json:"avg_tokens_per_sec"`   // Mean tokens-per-second across the bucket
+	P50TokensPerSec   float64   `json:"p50_tokens_per_sec"`   // Median tokens-per-second
+	P95TokensPerSec   float64   `json:"p95_tokens_per_sec"`
+	P99TokensPerSec   float64   `json:"p99_tokens_per_sec"`
+	TotalOutputTokens int64     `json:"total_output_tokens"`
+	TotalRequests     int64     `json:"total_requests"`
+}
+
+// TPSHistogramResult represents the tokens-per-second histogram query result.
+type TPSHistogramResult struct {
+	Buckets           []TPSHistogramBucket `json:"buckets"`
+	BucketSizeSeconds int64                `json:"bucket_size_seconds"`
 }
 
 // Provider-level histogram types

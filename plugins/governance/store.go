@@ -122,7 +122,7 @@ type GovernanceStore interface {
 	CheckVirtualKeyBudget(ctx context.Context, vk *configstoreTables.TableVirtualKey, request *EvaluationRequest, baselines map[string]float64) (Decision, error)
 	CheckVirtualKeyRateLimit(ctx context.Context, vk *configstoreTables.TableVirtualKey, request *EvaluationRequest, tokensBaselines map[string]int64, requestsBaselines map[string]int64) (Decision, error)
 	// In-memory usage updates (for VK-level)
-	UpdateVirtualKeyBudgetUsageInMemory(ctx context.Context, vk *configstoreTables.TableVirtualKey, provider schemas.ModelProvider, cost float64) error
+	UpdateVirtualKeyBudgetUsageInMemory(ctx context.Context, vk *configstoreTables.TableVirtualKey, provider schemas.ModelProvider, cost float64, energyJoules float64) error
 	UpdateVirtualKeyRateLimitUsageInMemory(ctx context.Context, vk *configstoreTables.TableVirtualKey, provider schemas.ModelProvider, tokensUsed int64, shouldUpdateTokens bool, shouldUpdateRequests bool) error
 	// In-memory reset checks (return items that need DB sync)
 	ResetExpiredRateLimitsInMemory(ctx context.Context) []*configstoreTables.TableRateLimit
@@ -131,11 +131,11 @@ type GovernanceStore interface {
 	ResetExpiredRateLimits(ctx context.Context, resetRateLimits []*configstoreTables.TableRateLimit) error
 	ResetExpiredBudgets(ctx context.Context, resetBudgets []*configstoreTables.TableBudget) error
 	// Provider and model-level usage updates (combined)
-	UpdateProviderAndModelBudgetUsageInMemory(ctx context.Context, model string, provider schemas.ModelProvider, cost float64) error
+	UpdateProviderAndModelBudgetUsageInMemory(ctx context.Context, model string, provider schemas.ModelProvider, cost float64, energyJoules float64) error
 	UpdateProviderAndModelRateLimitUsageInMemory(ctx context.Context, model string, provider schemas.ModelProvider, tokensUsed int64, shouldUpdateTokens bool, shouldUpdateRequests bool) error
 	// Dump operations
 	DumpRateLimits(ctx context.Context, tokenBaselines map[string]int64, requestBaselines map[string]int64) error
-	DumpBudgets(ctx context.Context, baselines map[string]float64) error
+	DumpBudgets(ctx context.Context, baselines map[string]float64, energyBaselines map[string]float64) error
 	// In-memory CRUD operations
 	CreateVirtualKeyInMemory(ctx context.Context, vk *configstoreTables.TableVirtualKey)
 	UpdateVirtualKeyInMemory(ctx context.Context, vk *configstoreTables.TableVirtualKey, budgetBaselines map[string]float64, rateLimitTokensBaselines map[string]int64, rateLimitRequestsBaselines map[string]int64)
@@ -161,7 +161,7 @@ type GovernanceStore interface {
 	// User-level governance checks (enterprise-only)
 	CheckUserBudget(ctx context.Context, userID string, request *EvaluationRequest, baselines map[string]float64) (Decision, error)
 	CheckUserRateLimit(ctx context.Context, userID string, request *EvaluationRequest, tokensBaselines map[string]int64, requestsBaselines map[string]int64) (Decision, error)
-	UpdateUserBudgetUsageInMemory(ctx context.Context, userID string, cost float64) error
+	UpdateUserBudgetUsageInMemory(ctx context.Context, userID string, cost float64, energyJoules float64) error
 	UpdateUserRateLimitUsageInMemory(ctx context.Context, userID string, tokensUsed int64, shouldUpdateTokens bool, shouldUpdateRequests bool) error
 	// Model config in-memory operations
 	UpdateModelConfigInMemory(ctx context.Context, mc *configstoreTables.TableModelConfig) *configstoreTables.TableModelConfig
@@ -315,17 +315,23 @@ func (gs *LocalGovernanceStore) DeleteRateLimit(ctx context.Context, rateLimitID
 	gs.rateLimits.Delete(rateLimitID)
 }
 
-// BumpBudgetUsage atomically increments CurrentUsage on the budget identified
-// by budgetID and, as a side effect, zeros CurrentUsage / advances LastReset
-// when the rolling ResetDuration has elapsed. Uses sync.Map.CompareAndSwap so
-// concurrent callers on the same budget never drop increments — a lost CAS
-// retries against the winner's snapshot. No-op when the budget is absent.
+// BumpBudgetUsage atomically increments CurrentUsage (USD) and
+// CurrentEnergyJoules on the budget identified by budgetID and, as a side
+// effect, zeros both counters / advances LastReset when the rolling
+// ResetDuration has elapsed. Uses sync.Map.CompareAndSwap so concurrent
+// callers on the same budget never drop increments — a lost CAS retries
+// against the winner's snapshot. No-op when the budget is absent.
 //
 // This is the serialisation point for every usage increment: callers MUST
 // funnel through this method (directly or via one of the higher-level
 // Update*BudgetUsageInMemory wrappers) rather than doing a plain
 // Load → clone → mutate → Store, which races.
-func (gs *LocalGovernanceStore) BumpBudgetUsage(ctx context.Context, budgetID string, cost float64) error {
+//
+// The energyJoules argument is the joule value reported by the provider for
+// this request. It is added to the budget's CurrentEnergyJoules only when
+// non-zero (so providers that do not report energy are no-ops). It is
+// always safe to pass 0 for those providers.
+func (gs *LocalGovernanceStore) BumpBudgetUsage(ctx context.Context, budgetID string, cost float64, energyJoules float64) error {
 	for {
 		raw, exists := gs.budgets.Load(budgetID)
 		if !exists || raw == nil {
@@ -341,11 +347,15 @@ func (gs *LocalGovernanceStore) BumpBudgetUsage(ctx context.Context, budgetID st
 			if duration, err := configstoreTables.ParseDuration(clone.ResetDuration); err == nil {
 				if now.Sub(clone.LastReset) >= duration {
 					clone.CurrentUsage = 0
+					clone.CurrentEnergyJoules = 0
 					clone.LastReset = now
 				}
 			}
 		}
 		clone.CurrentUsage += cost
+		if energyJoules != 0 {
+			clone.CurrentEnergyJoules += energyJoules
+		}
 		if gs.budgets.CompareAndSwap(budgetID, raw, &clone) {
 			return nil
 		}
@@ -422,6 +432,7 @@ func (gs *LocalGovernanceStore) ResetBudgetAt(ctx context.Context, budgetID stri
 		}
 		clone := *old
 		clone.CurrentUsage = 0
+		clone.CurrentEnergyJoules = 0
 		clone.LastReset = newLastReset
 		if gs.budgets.CompareAndSwap(budgetID, raw, &clone) {
 			return &clone, true
@@ -848,8 +859,14 @@ func (gs *LocalGovernanceStore) CheckRateLimit(ctx context.Context, entityWiseRa
 }
 
 // Generic check budget method
-// The idea is to keep this as a common method for checking all budgets. The entire business logic resides in here
-func (gs *LocalGovernanceStore) CheckBudget(ctx context.Context, entityWiseBudgets EntityWiseBudgets, baselines map[string]float64) (Decision, error) {
+// The idea is to keep this as a common method for checking all budgets. The entire business logic resides in here.
+//
+// `baselines` carries remote (other-node) dollar usage keyed by budget ID, and
+// `energyBaselines` carries remote joule usage keyed by the same ID. Either map
+// may be nil if the caller has no remote baseline to merge. The in-memory
+// CurrentUsage/CurrentEnergyJoules are treated as the local contribution; the
+// total is compared against the corresponding MaxLimit / MaxEnergyJoules.
+func (gs *LocalGovernanceStore) CheckBudget(ctx context.Context, entityWiseBudgets EntityWiseBudgets, baselines map[string]float64, energyBaselines map[string]float64) (Decision, error) {
 	// Check each budget in hierarchy order using in-memory data
 	for entity, budgets := range entityWiseBudgets {
 		for _, budget := range budgets { // Check if budget needs reset (in-memory check)
@@ -863,9 +880,11 @@ func (gs *LocalGovernanceStore) CheckBudget(ctx context.Context, entityWiseBudge
 					}
 				}
 			}
-			baseline, exists := baselines[budget.ID]
-			if !exists {
-				baseline = 0
+			baseline := 0.0
+			if baselines != nil {
+				if v, ok := baselines[budget.ID]; ok {
+					baseline = v
+				}
 			}
 			gs.logger.Debug("LocalStore CheckBudget: Checking %s budget %s: local=%.4f, remote=%.4f, total=%.4f, limit=%.4f",
 				entity, budget.ID, budget.CurrentUsage, baseline, budget.CurrentUsage+baseline, budget.MaxLimit)
@@ -874,6 +893,24 @@ func (gs *LocalGovernanceStore) CheckBudget(ctx context.Context, entityWiseBudge
 				gs.logger.Debug("LocalStore CheckBudget: Budget %s EXCEEDED", budget.ID)
 				return DecisionBudgetExceeded, fmt.Errorf("%s budget exceeded: %.4f >= %.4f dollars",
 					entity, budget.CurrentUsage+baseline, budget.MaxLimit)
+			}
+			// Energy dimension check (only when the budget exposes an energy cap).
+			// A nil MaxEnergyJoules means "no energy cap configured for this
+			// budget", so we skip the check entirely even if the budget has
+			// accumulated some energy from a previous cap.
+			if budget.MaxEnergyJoules != nil {
+				energyBaseline := 0.0
+				if energyBaselines != nil {
+					if v, ok := energyBaselines[budget.ID]; ok {
+						energyBaseline = v
+					}
+				}
+				totalEnergy := budget.CurrentEnergyJoules + energyBaseline
+				if totalEnergy >= *budget.MaxEnergyJoules {
+					gs.logger.Debug("LocalStore CheckBudget: Energy cap %s EXCEEDED: %.4f J >= %.4f J", budget.ID, totalEnergy, *budget.MaxEnergyJoules)
+					return DecisionEnergyBudgetExceeded, fmt.Errorf("%s energy budget exceeded: %.4f >= %.4f joules",
+						entity, totalEnergy, *budget.MaxEnergyJoules)
+				}
 			}
 		}
 	}
@@ -900,7 +937,7 @@ func (gs *LocalGovernanceStore) CheckVirtualKeyBudget(ctx context.Context, vk *c
 	for budgetID, baseline := range baselines {
 		gs.logger.Debug("  - Baseline for budget %s: %.4f", budgetID, baseline)
 	}
-	return gs.CheckBudget(ctx, budgetsWithCategories, baselines)
+	return gs.CheckBudget(ctx, budgetsWithCategories, baselines, nil)
 }
 
 // CheckProviderBudget performs budget checking for provider-level configs (lock-free for high performance)
@@ -931,7 +968,7 @@ func (gs *LocalGovernanceStore) CheckProviderBudget(ctx context.Context, request
 	if budget == nil {
 		return DecisionAllow, nil
 	}
-	return gs.CheckBudget(ctx, map[string][]*configstoreTables.TableBudget{providerKey: {budget}}, baselines)
+	return gs.CheckBudget(ctx, map[string][]*configstoreTables.TableBudget{providerKey: {budget}}, baselines, nil)
 }
 
 // CheckProviderRateLimit checks provider-level rate limits and returns evaluation result if violated
@@ -1023,7 +1060,7 @@ func (gs *LocalGovernanceStore) CheckModelBudget(ctx context.Context, request *E
 			entityWiseBudgets[key] = []*configstoreTables.TableBudget{budget}
 		}
 	}
-	return gs.CheckBudget(ctx, entityWiseBudgets, baselines)
+	return gs.CheckBudget(ctx, entityWiseBudgets, baselines, nil)
 }
 
 // CheckTeamBudget checks team-level budget and returns evaluation result if violated
@@ -1052,7 +1089,7 @@ func (gs *LocalGovernanceStore) CheckTeamBudget(ctx context.Context, teamID stri
 		return DecisionAllow, nil
 	}
 	key := fmt.Sprintf("Team:%s", teamID)
-	return gs.CheckBudget(ctx, EntityWiseBudgets{key: list}, baselines)
+	return gs.CheckBudget(ctx, EntityWiseBudgets{key: list}, baselines, nil)
 }
 
 // CheckTeamRateLimit checks team-level rate limit and returns evaluation result if violated
@@ -1102,7 +1139,7 @@ func (gs *LocalGovernanceStore) CheckCustomerBudget(ctx context.Context, custome
 	}
 	key := fmt.Sprintf("Customer:%s", customerID)
 	entityWiseBudgets := EntityWiseBudgets{key: {customerBudget}}
-	return gs.CheckBudget(ctx, entityWiseBudgets, baselines)
+	return gs.CheckBudget(ctx, entityWiseBudgets, baselines, nil)
 }
 
 // CheckCustomerRateLimit checks customer-level rate limit and returns evaluation result if violated
@@ -1208,14 +1245,14 @@ func (gs *LocalGovernanceStore) CheckVirtualKeyRateLimit(ctx context.Context, vk
 }
 
 // UpdateVirtualKeyBudgetUsageInMemory performs atomic budget updates across the hierarchy (both in memory and in database)
-func (gs *LocalGovernanceStore) UpdateVirtualKeyBudgetUsageInMemory(ctx context.Context, vk *configstoreTables.TableVirtualKey, provider schemas.ModelProvider, cost float64) error {
+func (gs *LocalGovernanceStore) UpdateVirtualKeyBudgetUsageInMemory(ctx context.Context, vk *configstoreTables.TableVirtualKey, provider schemas.ModelProvider, cost float64, energyJoules float64) error {
 	if vk == nil {
 		return fmt.Errorf("virtual key cannot be nil")
 	}
 	// Collect budget IDs using fast in-memory lookup instead of DB queries
 	budgetIDs := gs.collectBudgetIDsFromMemory(ctx, vk, provider)
 	for _, budgetID := range budgetIDs {
-		if err := gs.BumpBudgetUsage(ctx, budgetID, cost); err != nil {
+		if err := gs.BumpBudgetUsage(ctx, budgetID, cost, energyJoules); err != nil {
 			return err
 		}
 	}
@@ -1223,13 +1260,13 @@ func (gs *LocalGovernanceStore) UpdateVirtualKeyBudgetUsageInMemory(ctx context.
 }
 
 // UpdateProviderAndModelBudgetUsageInMemory performs atomic budget updates for both provider-level and model-level configs (in memory)
-func (gs *LocalGovernanceStore) UpdateProviderAndModelBudgetUsageInMemory(ctx context.Context, model string, provider schemas.ModelProvider, cost float64) error {
+func (gs *LocalGovernanceStore) UpdateProviderAndModelBudgetUsageInMemory(ctx context.Context, model string, provider schemas.ModelProvider, cost float64, energyJoules float64) error {
 	// 1. Update provider-level budget (if provider is set)
 	if provider != "" {
 		providerKey := string(provider)
 		if value, exists := gs.providers.Load(providerKey); exists && value != nil {
 			if providerTable, ok := value.(*configstoreTables.TableProvider); ok && providerTable != nil && providerTable.BudgetID != nil {
-				if err := gs.BumpBudgetUsage(ctx, *providerTable.BudgetID, cost); err != nil {
+				if err := gs.BumpBudgetUsage(ctx, *providerTable.BudgetID, cost, energyJoules); err != nil {
 					return err
 				}
 			}
@@ -1242,7 +1279,7 @@ func (gs *LocalGovernanceStore) UpdateProviderAndModelBudgetUsageInMemory(ctx co
 		key := fmt.Sprintf("%s:%s", model, string(provider))
 		if value, exists := gs.modelConfigs.Load(key); exists && value != nil {
 			if mc, ok := value.(*configstoreTables.TableModelConfig); ok && mc != nil && mc.BudgetID != nil {
-				if err := gs.BumpBudgetUsage(ctx, *mc.BudgetID, cost); err != nil {
+				if err := gs.BumpBudgetUsage(ctx, *mc.BudgetID, cost, energyJoules); err != nil {
 					return err
 				}
 			}
@@ -1252,7 +1289,7 @@ func (gs *LocalGovernanceStore) UpdateProviderAndModelBudgetUsageInMemory(ctx co
 	// Always check model-only config (if exists) - regardless of whether model+provider config exists
 	// Uses findModelOnlyConfig for cross-provider model name normalization
 	if mc, _ := gs.findModelOnlyConfig(ctx, model); mc != nil && mc.BudgetID != nil {
-		if err := gs.BumpBudgetUsage(ctx, *mc.BudgetID, cost); err != nil {
+		if err := gs.BumpBudgetUsage(ctx, *mc.BudgetID, cost, energyJoules); err != nil {
 			return err
 		}
 	}
@@ -1262,7 +1299,7 @@ func (gs *LocalGovernanceStore) UpdateProviderAndModelBudgetUsageInMemory(ctx co
 
 // UpdateUserBudgetUsageInMemory updates user's budget usage in memory (enterprise-only)
 // Community build: silent no-op to avoid per-request error spam when a userID is set.
-func (gs *LocalGovernanceStore) UpdateUserBudgetUsageInMemory(ctx context.Context, userID string, cost float64) error {
+func (gs *LocalGovernanceStore) UpdateUserBudgetUsageInMemory(ctx context.Context, userID string, cost float64, energyJoules float64) error {
 	return nil
 }
 
@@ -1597,13 +1634,16 @@ func (gs *LocalGovernanceStore) DumpRateLimits(ctx context.Context, tokenBaselin
 }
 
 // DumpBudgets dumps all budgets to the database
-func (gs *LocalGovernanceStore) DumpBudgets(ctx context.Context, baselines map[string]float64) error {
+func (gs *LocalGovernanceStore) DumpBudgets(ctx context.Context, baselines map[string]float64, energyBaselines map[string]float64) error {
 	if gs.configStore == nil {
 		return nil
 	}
 	// This is to prevent nil pointer dereference
 	if baselines == nil {
 		baselines = map[string]float64{}
+	}
+	if energyBaselines == nil {
+		energyBaselines = map[string]float64{}
 	}
 	budgets := make(map[string]*configstoreTables.TableBudget)
 	gs.budgets.Range(func(key, value interface{}) bool {
@@ -1626,14 +1666,22 @@ func (gs *LocalGovernanceStore) DumpBudgets(ctx context.Context, baselines map[s
 				if baseline, exists := baselines[inMemoryBudget.ID]; exists {
 					newUsage += baseline
 				}
+				newEnergyJoules := inMemoryBudget.CurrentEnergyJoules
+				if energyBaseline, exists := energyBaselines[inMemoryBudget.ID]; exists {
+					newEnergyJoules += energyBaseline
+				}
 
 				// Direct UPDATE avoids read-then-write lock escalation that causes deadlocks
 				// Use Session with SkipHooks to avoid triggering BeforeSave hook validation
+				updates := map[string]interface{}{
+					"current_usage":         newUsage,
+					"current_energy_joules": newEnergyJoules,
+				}
 				result := tx.WithContext(ctx).
 					Session(&gorm.Session{SkipHooks: true}).
 					Model(&configstoreTables.TableBudget{}).
 					Where("id = ?", inMemoryBudget.ID).
-					Update("current_usage", newUsage)
+					Updates(updates)
 
 				if result.Error != nil {
 					return fmt.Errorf("failed to update budget %s: %w", inMemoryBudget.ID, result.Error)

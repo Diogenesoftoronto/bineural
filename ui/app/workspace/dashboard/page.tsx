@@ -7,6 +7,8 @@ import {
 	useLazyGetLogsCostHistogramQuery,
 	useLazyGetLogsHistogramQuery,
 	useLazyGetLogsLatencyHistogramQuery,
+	useLazyGetLogsEnergyHistogramQuery,
+	useLazyGetLogsTPSHistogramQuery,
 	useLazyGetLogsModelHistogramQuery,
 	useLazyGetLogsProviderCostHistogramQuery,
 	useLazyGetLogsProviderLatencyHistogramQuery,
@@ -20,6 +22,7 @@ import {
 } from "@/lib/store";
 import type {
 	CostHistogramResponse,
+	EnergyHistogramResponse,
 	LatencyHistogramResponse,
 	LogFilters,
 	LogStats,
@@ -34,6 +37,7 @@ import type {
 	ProviderLatencyHistogramResponse,
 	ProviderTokenHistogramResponse,
 	TokenHistogramResponse,
+	TPSHistogramResponse,
 } from "@/lib/types/logs";
 import { dateUtils } from "@/lib/types/logs";
 import { getRangeForPeriod, TIME_PERIODS } from "@/lib/utils/timeRange";
@@ -67,8 +71,12 @@ export default function DashboardPage() {
 	const [costData, setCostData] = useState<CostHistogramResponse | null>(null);
 	const [modelData, setModelData] = useState<ModelHistogramResponse | null>(null);
 	const [latencyData, setLatencyData] = useState<LatencyHistogramResponse | null>(null);
+	const [energyData, setEnergyData] = useState<EnergyHistogramResponse | null>(null);
+	const [tpsData, setTpsData] = useState<TPSHistogramResponse | null>(null);
 	const [logsStats, setLogsStats] = useState<LogStats | null>(null);
 	const [loadingStats, setLoadingStats] = useState(true);
+	const [loadingEnergy, setLoadingEnergy] = useState(true);
+	const [loadingTps, setLoadingTps] = useState(true);
 	const [providerCostData, setProviderCostData] = useState<ProviderCostHistogramResponse | null>(null);
 	const [providerTokenData, setProviderTokenData] = useState<ProviderTokenHistogramResponse | null>(null);
 	const [providerLatencyData, setProviderLatencyData] = useState<ProviderLatencyHistogramResponse | null>(null);
@@ -105,6 +113,8 @@ export default function DashboardPage() {
 	const [triggerCost] = useLazyGetLogsCostHistogramQuery();
 	const [triggerModels] = useLazyGetLogsModelHistogramQuery();
 	const [triggerLatency] = useLazyGetLogsLatencyHistogramQuery();
+	const [triggerEnergy] = useLazyGetLogsEnergyHistogramQuery();
+	const [triggerTps] = useLazyGetLogsTPSHistogramQuery();
 	const [triggerStats] = useLazyGetLogsStatsQuery();
 	const [triggerProviderCost] = useLazyGetLogsProviderCostHistogramQuery();
 	const [triggerProviderTokens] = useLazyGetLogsProviderTokenHistogramQuery();
@@ -150,6 +160,9 @@ export default function DashboardPage() {
 			cost_chart: parseAsString.withDefault("bar"),
 			model_chart: parseAsString.withDefault("bar"),
 			latency_chart: parseAsString.withDefault("bar"),
+			energy_chart: parseAsString.withDefault("bar"),
+			tps_chart: parseAsString.withDefault("bar"),
+			cache_chart: parseAsString.withDefault("bar"),
 			cost_model: parseAsString.withDefault("all"),
 			usage_model: parseAsString.withDefault("all"),
 			provider_cost_chart: parseAsString.withDefault("bar"),
@@ -292,6 +305,8 @@ export default function DashboardPage() {
 		setLoadingCost(true);
 		setLoadingModels(true);
 		setLoadingLatency(true);
+		setLoadingEnergy(true);
+		setLoadingTps(true);
 		setLoadingStats(true);
 
 		const fetchFilters = { filters };
@@ -302,7 +317,9 @@ export default function DashboardPage() {
 			triggerCost(fetchFilters, false),
 			triggerModels(fetchFilters, false),
 			triggerLatency(fetchFilters, false),
-		]).then(([histogramResult, tokenResult, costResult, modelResult, latencyResult]) => {
+			triggerEnergy(fetchFilters, false),
+			triggerTps(fetchFilters, false),
+		]).then(([histogramResult, tokenResult, costResult, modelResult, latencyResult, energyResult, tpsResult]) => {
 			setHistogramData(histogramResult.data ?? null);
 			setLoadingHistogram(false);
 			setTokenData(tokenResult.data ?? null);
@@ -313,6 +330,10 @@ export default function DashboardPage() {
 			setLoadingModels(false);
 			setLatencyData(latencyResult.data ?? null);
 			setLoadingLatency(false);
+			setEnergyData(energyResult.data ?? null);
+			setLoadingEnergy(false);
+			setTpsData(tpsResult.data ?? null);
+			setLoadingTps(false);
 		});
 		const statsPromise = triggerStats(fetchFilters, false).then((statsResult) => {
 			setLogsStats(statsResult.data ?? null);
@@ -526,6 +547,9 @@ export default function DashboardPage() {
 	const handleCostChartToggle = useCallback((type: ChartType) => setUrlState({ cost_chart: type }), [setUrlState]);
 	const handleModelChartToggle = useCallback((type: ChartType) => setUrlState({ model_chart: type }), [setUrlState]);
 	const handleLatencyChartToggle = useCallback((type: ChartType) => setUrlState({ latency_chart: type }), [setUrlState]);
+	const handleEnergyChartToggle = useCallback((type: ChartType) => setUrlState({ energy_chart: type }), [setUrlState]);
+	const handleTpsChartToggle = useCallback((type: ChartType) => setUrlState({ tps_chart: type }), [setUrlState]);
+	const handleCacheChartToggle = useCallback((type: ChartType) => setUrlState({ cache_chart: type }), [setUrlState]);
 
 	// Adapter: converts a full LogFilters object to dashboard's CSV-based URL state
 	const setFilters = useCallback(
@@ -625,6 +649,8 @@ export default function DashboardPage() {
 			costData,
 			modelData,
 			latencyData,
+			energyData,
+			tpsData,
 			logsStats,
 			providerCostData,
 			providerTokenData,
@@ -640,6 +666,8 @@ export default function DashboardPage() {
 			costData,
 			modelData,
 			latencyData,
+			energyData,
+			tpsData,
 			logsStats,
 			providerCostData,
 			providerTokenData,
@@ -826,12 +854,16 @@ export default function DashboardPage() {
 									costData={costData}
 									modelData={modelData}
 									latencyData={latencyData}
+									energyData={energyData}
+									tpsData={tpsData}
 									logsStats={logsStats}
 									loadingHistogram={loadingHistogram}
 									loadingTokens={loadingTokens}
 									loadingCost={loadingCost}
 									loadingModels={loadingModels}
 									loadingLatency={loadingLatency}
+									loadingEnergy={loadingEnergy}
+									loadingTps={loadingTps}
 									loadingStats={loadingStats}
 									startTime={urlState.start_time}
 									endTime={urlState.end_time}
@@ -840,6 +872,9 @@ export default function DashboardPage() {
 									costChartType={toChartType(urlState.cost_chart)}
 									modelChartType={toChartType(urlState.model_chart)}
 									latencyChartType={toChartType(urlState.latency_chart)}
+									energyChartType={toChartType(urlState.energy_chart)}
+									tpsChartType={toChartType(urlState.tps_chart)}
+									cacheChartType={toChartType(urlState.cache_chart)}
 									costModel={urlState.cost_model}
 									usageModel={urlState.usage_model}
 									costModels={costModels}
@@ -850,6 +885,9 @@ export default function DashboardPage() {
 									onCostChartToggle={handleCostChartToggle}
 									onModelChartToggle={handleModelChartToggle}
 									onLatencyChartToggle={handleLatencyChartToggle}
+									onEnergyChartToggle={handleEnergyChartToggle}
+									onTpsChartToggle={handleTpsChartToggle}
+									onCacheChartToggle={handleCacheChartToggle}
 									onCostModelChange={handleCostModelChange}
 									onUsageModelChange={handleUsageModelChange}
 								/>

@@ -32,7 +32,8 @@ import (
 	"github.com/tidwall/sjson"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fasthttp/fasthttpproxy"
-)
+
+	"strconv")
 
 // sortedAPI is a sonic encoder/decoder that sorts map keys during marshaling.
 // This ensures deterministic JSON output for map[string]interface{} values,
@@ -551,6 +552,120 @@ func ExtractProviderResponseHeadersFromHTTP(resp *http.Response) map[string]stri
 		return nil
 	}
 	return headers
+}
+
+// SetExtraHeaders
+
+// ExtractEnergyConsumptionFromHeaders reads provider-reported energy headers from
+// a fasthttp response and populates an EnergyConsumption struct. Headers are
+// optional; missing headers leave the corresponding field at its zero value.
+//
+// Header mapping (Neuralwatt-compatible):
+//   - x-energy-used (Wh)            -> EnergyJoules (Wh * 3600)
+//   - x-energy-included (Wh)        -> EnergyKWh (Wh / 1000)
+//   - x-request-cost-usd            -> BilledCostUSD
+//   - x-cache-savings-usd           -> CacheSavingsUSD
+//   - x-allowance-remaining-usd     -> AllowanceRemainingUSD
+//   - x-budget-remaining-usd        -> BudgetRemainingUSD
+//   - x-subscription-plan           -> AttributionMethod
+//   - x-energy-remaining            -> (used to populate BudgetRemainingUSD if missing)
+//
+// Returns nil when no recognized header is present, so callers can avoid
+// allocating an empty struct on the response hot path.
+func ExtractEnergyConsumptionFromHeaders(resp *fasthttp.Response) *schemas.EnergyConsumption {
+	if resp == nil {
+		return nil
+	}
+	var ec *schemas.EnergyConsumption
+	visit := func(key, value []byte) {
+		k := strings.ToLower(string(key))
+		v := string(value)
+		switch k {
+		case "x-energy-used":
+			if wh, err := strconv.ParseFloat(v, 64); err == nil && wh != 0 {
+				if ec == nil {
+					ec = &schemas.EnergyConsumption{}
+				}
+				ec.EnergyJoules = wh * 3600.0
+			}
+		case "x-energy-included":
+			if wh, err := strconv.ParseFloat(v, 64); err == nil && wh != 0 {
+				if ec == nil {
+					ec = &schemas.EnergyConsumption{}
+				}
+				ec.EnergyKWh = wh / 1000.0
+			}
+		case "x-request-cost-usd":
+			if f, err := strconv.ParseFloat(v, 64); err == nil && f != 0 {
+				if ec == nil {
+					ec = &schemas.EnergyConsumption{}
+				}
+				ec.BilledCostUSD = f
+			}
+		case "x-cache-savings-usd":
+			if f, err := strconv.ParseFloat(v, 64); err == nil && f != 0 {
+				if ec == nil {
+					ec = &schemas.EnergyConsumption{}
+				}
+				ec.CacheSavingsUSD = f
+			}
+		case "x-allowance-remaining-usd":
+			if f, err := strconv.ParseFloat(v, 64); err == nil && f != 0 {
+				if ec == nil {
+					ec = &schemas.EnergyConsumption{}
+				}
+				ec.AllowanceRemainingUSD = f
+			}
+		case "x-budget-remaining-usd":
+			if f, err := strconv.ParseFloat(v, 64); err == nil && f != 0 {
+				if ec == nil {
+					ec = &schemas.EnergyConsumption{}
+				}
+				ec.BudgetRemainingUSD = f
+			}
+		case "x-subscription-plan":
+			if v != "" {
+				if ec == nil {
+					ec = &schemas.EnergyConsumption{}
+				}
+				ec.AttributionMethod = v
+			}
+		}
+	}
+	resp.Header.VisitAll(visit)
+	return ec
+}
+
+// ApplyEnergyConsumptionToChatResponse populates ChatResponse.Usage.Energy
+// from an EnergyConsumption struct. Creates Usage if missing. Pass nil to no-op.
+func ApplyEnergyConsumptionToChatResponse(response *schemas.BifrostChatResponse, ec *schemas.EnergyConsumption) {
+	if response == nil || ec == nil {
+		return
+	}
+	if response.Usage == nil {
+		response.Usage = &schemas.BifrostLLMUsage{}
+	}
+	response.Usage.Energy = ec
+	// BilledCostUSD from provider overrides per-token math when present.
+	if ec.BilledCostUSD > 0 && response.Usage.Cost != nil {
+		response.Usage.Cost.TotalCost = ec.BilledCostUSD
+	}
+}
+
+// ApplyEnergyConsumptionToResponsesResponse populates
+// ResponsesResponse.Usage.Energy from an EnergyConsumption struct. Creates Usage
+// if missing. Pass nil to no-op.
+func ApplyEnergyConsumptionToResponsesResponse(response *schemas.BifrostResponsesResponse, ec *schemas.EnergyConsumption) {
+	if response == nil || ec == nil {
+		return
+	}
+	if response.Usage == nil {
+		response.Usage = &schemas.ResponsesResponseUsage{}
+	}
+	response.Usage.Energy = ec
+	if ec.BilledCostUSD > 0 && response.Usage.Cost != nil {
+		response.Usage.Cost.TotalCost = ec.BilledCostUSD
+	}
 }
 
 // SetExtraHeaders sets additional headers from NetworkConfig to the fasthttp request.

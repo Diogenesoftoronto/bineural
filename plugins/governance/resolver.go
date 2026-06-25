@@ -14,16 +14,17 @@ import (
 type Decision string
 
 const (
-	DecisionAllow              Decision = "allow"
-	DecisionVirtualKeyNotFound Decision = "virtual_key_not_found"
-	DecisionVirtualKeyBlocked  Decision = "virtual_key_blocked"
-	DecisionRateLimited        Decision = "rate_limited"
-	DecisionBudgetExceeded     Decision = "budget_exceeded"
-	DecisionTokenLimited       Decision = "token_limited"
-	DecisionRequestLimited     Decision = "request_limited"
-	DecisionModelBlocked       Decision = "model_blocked"
-	DecisionProviderBlocked    Decision = "provider_blocked"
-	DecisionMCPToolBlocked     Decision = "mcp_tool_blocked"
+	DecisionAllow                  Decision = "allow"
+	DecisionVirtualKeyNotFound     Decision = "virtual_key_not_found"
+	DecisionVirtualKeyBlocked      Decision = "virtual_key_blocked"
+	DecisionRateLimited            Decision = "rate_limited"
+	DecisionBudgetExceeded         Decision = "budget_exceeded"
+	DecisionEnergyBudgetExceeded   Decision = "energy_budget_exceeded"
+	DecisionTokenLimited           Decision = "token_limited"
+	DecisionRequestLimited         Decision = "request_limited"
+	DecisionModelBlocked           Decision = "model_blocked"
+	DecisionProviderBlocked        Decision = "provider_blocked"
+	DecisionMCPToolBlocked         Decision = "mcp_tool_blocked"
 )
 
 // EvaluationRequest contains the context for evaluating a request
@@ -458,7 +459,7 @@ func isRateLimitViolation(decision Decision) bool {
 
 // isBudgetViolation returns true if the decision indicates a budget violation.
 func isBudgetViolation(decision Decision) bool {
-	return decision == DecisionBudgetExceeded
+	return decision == DecisionBudgetExceeded || decision == DecisionEnergyBudgetExceeded
 }
 
 // reasonFromErr yields a non-nil-safe reason string. When the store returns a

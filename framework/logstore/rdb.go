@@ -1581,6 +1581,236 @@ func (s *RDBLogStore) buildLatencyHistogramResult(computedBuckets map[int64]Late
 	}, nil
 }
 
+// GetEnergyHistogram returns time-bucketed energy consumption (joules) and
+// billed-cost totals (USD) per bucket. Skips the PostgreSQL materialized-view
+// fast path because the matview does not (yet) include energy_joules /
+// billed_cost_usd; falls through to the dialect-specific raw-query path.
+func (s *RDBLogStore) GetEnergyHistogram(ctx context.Context, filters SearchFilters, bucketSizeSeconds int64) (*EnergyHistogramResult, error) {
+	if bucketSizeSeconds <= 0 {
+		bucketSizeSeconds = 3600
+	}
+	dialect := s.db.Dialector.Name()
+
+	baseQuery := s.db.WithContext(ctx).Model(&Log{})
+	baseQuery = s.applyFilters(baseQuery, filters)
+	// Only completed requests contribute energy/billed-cost.
+	baseQuery = baseQuery.Where("status IN ?", []string{"success", "error"})
+
+	var results []struct {
+		BucketTimestamp int64   `gorm:"column:bucket_timestamp"`
+		EnergyJoules    float64 `gorm:"column:energy_joules"`
+		BilledCostUSD   float64 `gorm:"column:billed_cost_usd"`
+		TotalRequests   int64   `gorm:"column:total_requests"`
+	}
+
+	var selectClause string
+	switch dialect {
+	case "sqlite":
+		selectClause = fmt.Sprintf(`
+			(CAST(strftime('%%s', timestamp) AS INTEGER) / %d) * %d as bucket_timestamp,
+			COALESCE(SUM(energy_joules), 0) as energy_joules,
+			COALESCE(SUM(billed_cost_usd), 0) as billed_cost_usd,
+			COUNT(*) as total_requests
+		`, bucketSizeSeconds, bucketSizeSeconds)
+	case "mysql":
+		selectClause = fmt.Sprintf(`
+			(FLOOR(UNIX_TIMESTAMP(timestamp) / %d) * %d) as bucket_timestamp,
+			COALESCE(SUM(energy_joules), 0) as energy_joules,
+			COALESCE(SUM(billed_cost_usd), 0) as billed_cost_usd,
+			COUNT(*) as total_requests
+		`, bucketSizeSeconds, bucketSizeSeconds)
+	default:
+		selectClause = fmt.Sprintf(`
+			CAST(FLOOR(EXTRACT(EPOCH FROM timestamp) / %d) * %d AS BIGINT) as bucket_timestamp,
+			COALESCE(SUM(energy_joules), 0) as energy_joules,
+			COALESCE(SUM(billed_cost_usd), 0) as billed_cost_usd,
+			COUNT(*) as total_requests
+		`, bucketSizeSeconds, bucketSizeSeconds)
+	}
+
+	if err := baseQuery.
+		Select(selectClause).
+		Group("bucket_timestamp").
+		Order("bucket_timestamp ASC").
+		Find(&results).Error; err != nil {
+		return nil, fmt.Errorf("failed to get energy histogram: %w", err)
+	}
+
+	resultMap := make(map[int64]struct {
+		EnergyJoules  float64
+		BilledCostUSD float64
+		TotalRequests int64
+	}, len(results))
+	for _, r := range results {
+		resultMap[r.BucketTimestamp] = struct {
+			EnergyJoules  float64
+			BilledCostUSD float64
+			TotalRequests int64
+		}{
+			EnergyJoules:  r.EnergyJoules,
+			BilledCostUSD: r.BilledCostUSD,
+			TotalRequests: r.TotalRequests,
+		}
+	}
+
+	allTimestamps := generateBucketTimestamps(filters.StartTime, filters.EndTime, bucketSizeSeconds)
+	buckets := make([]EnergyHistogramBucket, 0, len(allTimestamps))
+	if len(allTimestamps) == 0 {
+		// No explicit window; emit whatever rows we got.
+		for _, r := range results {
+			avgPower := 0.0
+			if bucketSizeSeconds > 0 {
+				avgPower = r.EnergyJoules / float64(bucketSizeSeconds)
+			}
+			buckets = append(buckets, EnergyHistogramBucket{
+				Timestamp:     time.Unix(r.BucketTimestamp, 0).UTC(),
+				EnergyJoules:  r.EnergyJoules,
+				BilledCostUSD: r.BilledCostUSD,
+				AvgPowerWatts: avgPower,
+				TotalRequests: r.TotalRequests,
+			})
+		}
+	} else {
+		for _, ts := range allTimestamps {
+			if d, ok := resultMap[ts]; ok {
+				avgPower := 0.0
+				if bucketSizeSeconds > 0 {
+					avgPower = d.EnergyJoules / float64(bucketSizeSeconds)
+				}
+				buckets = append(buckets, EnergyHistogramBucket{
+					Timestamp:     time.Unix(ts, 0).UTC(),
+					EnergyJoules:  d.EnergyJoules,
+					BilledCostUSD: d.BilledCostUSD,
+					AvgPowerWatts: avgPower,
+					TotalRequests: d.TotalRequests,
+				})
+			} else {
+				buckets = append(buckets, EnergyHistogramBucket{
+					Timestamp: time.Unix(ts, 0).UTC(),
+				})
+			}
+		}
+	}
+
+	return &EnergyHistogramResult{
+		Buckets:           buckets,
+		BucketSizeSeconds: bucketSizeSeconds,
+	}, nil
+}
+
+// GetTPSHistogram returns time-bucketed tokens-per-second percentiles per
+// bucket. The per-log TPS is computed as
+// completion_tokens * 1000.0 / NULLIF(latency, 0); the bucket averages and
+// percentiles are then derived from the per-log values in Go (mirrors the
+// SQLite/MySQL path used by GetLatencyHistogram, which lack percentile_cont
+// for the same reason).
+func (s *RDBLogStore) GetTPSHistogram(ctx context.Context, filters SearchFilters, bucketSizeSeconds int64) (*TPSHistogramResult, error) {
+	if bucketSizeSeconds <= 0 {
+		bucketSizeSeconds = 3600
+	}
+	dialect := s.db.Dialector.Name()
+
+	baseQuery := s.db.WithContext(ctx).Model(&Log{})
+	baseQuery = s.applyFilters(baseQuery, filters)
+	baseQuery = baseQuery.Where("status IN ?", []string{"success", "error"})
+	baseQuery = baseQuery.Where("latency IS NOT NULL AND latency > 0")
+	baseQuery = baseQuery.Where("completion_tokens IS NOT NULL AND completion_tokens > 0")
+
+	var results []struct {
+		BucketTimestamp  int64 `gorm:"column:bucket_timestamp"`
+		CompletionTokens int   `gorm:"column:completion_tokens"`
+		Latency          int   `gorm:"column:latency"`
+	}
+
+	var selectClause string
+	switch dialect {
+	case "sqlite":
+		selectClause = fmt.Sprintf(`
+			(CAST(strftime('%%s', timestamp) AS INTEGER) / %d) * %d as bucket_timestamp,
+			completion_tokens,
+			latency
+		`, bucketSizeSeconds, bucketSizeSeconds)
+	case "mysql":
+		selectClause = fmt.Sprintf(`
+			(FLOOR(UNIX_TIMESTAMP(timestamp) / %d) * %d) as bucket_timestamp,
+			completion_tokens,
+			latency
+		`, bucketSizeSeconds, bucketSizeSeconds)
+	default:
+		selectClause = fmt.Sprintf(`
+			CAST(FLOOR(EXTRACT(EPOCH FROM timestamp) / %d) * %d AS BIGINT) as bucket_timestamp,
+			completion_tokens,
+			latency
+		`, bucketSizeSeconds, bucketSizeSeconds)
+	}
+
+	if err := baseQuery.
+		Select(selectClause).
+		Order("bucket_timestamp ASC").
+		Find(&results).Error; err != nil {
+		return nil, fmt.Errorf("failed to get tps histogram: %w", err)
+	}
+
+	type bucketData struct {
+		tps       []float64
+		outTokens int64
+		requests  int64
+	}
+	bucketMap := make(map[int64]*bucketData)
+	var orderedKeys []int64
+
+	for _, r := range results {
+		bd, exists := bucketMap[r.BucketTimestamp]
+		if !exists {
+			bd = &bucketData{}
+			bucketMap[r.BucketTimestamp] = bd
+			orderedKeys = append(orderedKeys, r.BucketTimestamp)
+		}
+		// completion_tokens * 1000.0 / latency_ms => tokens per second
+		if r.Latency > 0 {
+			bd.tps = append(bd.tps, float64(r.CompletionTokens)*1000.0/float64(r.Latency))
+		}
+		bd.outTokens += int64(r.CompletionTokens)
+		bd.requests++
+	}
+
+	allTimestamps := generateBucketTimestamps(filters.StartTime, filters.EndTime, bucketSizeSeconds)
+	bucketKeys := orderedKeys
+	if len(allTimestamps) > 0 {
+		bucketKeys = allTimestamps
+	}
+	buckets := make([]TPSHistogramBucket, 0, len(bucketKeys))
+	for _, ts := range bucketKeys {
+		bd := bucketMap[ts]
+		if bd == nil {
+			buckets = append(buckets, TPSHistogramBucket{Timestamp: time.Unix(ts, 0).UTC()})
+			continue
+		}
+		var sum float64
+		for _, v := range bd.tps {
+			sum += v
+		}
+		var avg float64
+		if len(bd.tps) > 0 {
+			avg = sum / float64(len(bd.tps))
+		}
+		buckets = append(buckets, TPSHistogramBucket{
+			Timestamp:         time.Unix(ts, 0).UTC(),
+			AvgTokensPerSec:   avg,
+			P50TokensPerSec:   computePercentile(bd.tps, 0.50),
+			P95TokensPerSec:   computePercentile(bd.tps, 0.95),
+			P99TokensPerSec:   computePercentile(bd.tps, 0.99),
+			TotalOutputTokens: bd.outTokens,
+			TotalRequests:     bd.requests,
+		})
+	}
+
+	return &TPSHistogramResult{
+		Buckets:           buckets,
+		BucketSizeSeconds: bucketSizeSeconds,
+	}, nil
+}
+
 // GetModelRankings returns models ranked by usage with trend comparison to the previous period.
 func (s *RDBLogStore) GetModelRankings(ctx context.Context, filters SearchFilters) (*ModelRankingResult, error) {
 	if s.db.Dialector.Name() == "postgres" && s.canUseMatView(filters) {

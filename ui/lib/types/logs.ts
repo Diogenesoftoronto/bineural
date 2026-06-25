@@ -547,6 +547,11 @@ export interface LogEntry {
 	tools?: Tool[];
 	tool_calls?: ToolCall[];
 	latency?: number;
+	prompt_tokens?: number;
+	completion_tokens?: number;
+	tokens_per_second?: number; // output_tokens / (latency_ms / 1000), computed client-side
+	energy_joules?: number;
+	billed_cost_usd?: number;
 	token_usage?: LLMUsage;
 	cache_debug?: CacheDebug;
 	cost?: number; // Cost in dollars (total cost of the request - includes cache lookup cost)
@@ -701,6 +706,36 @@ export interface LatencyHistogramBucket {
 
 export interface LatencyHistogramResponse {
 	buckets: LatencyHistogramBucket[];
+	bucket_size_seconds: number;
+}
+
+// EnergyHistogramBucket represents a single time bucket for energy + billed-cost data.
+export interface EnergyHistogramBucket {
+	timestamp: string;
+	energy_joules: number;
+	billed_cost_usd: number;
+	avg_power_watts: number;
+	total_requests: number;
+}
+
+export interface EnergyHistogramResponse {
+	buckets: EnergyHistogramBucket[];
+	bucket_size_seconds: number;
+}
+
+// TPSHistogramBucket represents a single time bucket for tokens-per-second data.
+export interface TPSHistogramBucket {
+	timestamp: string;
+	avg_tokens_per_sec: number;
+	p50_tokens_per_sec: number;
+	p95_tokens_per_sec: number;
+	p99_tokens_per_sec: number;
+	total_output_tokens: number;
+	total_requests: number;
+}
+
+export interface TPSHistogramResponse {
+	buckets: TPSHistogramBucket[];
 	bucket_size_seconds: number;
 }
 

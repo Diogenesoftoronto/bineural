@@ -1,7 +1,9 @@
 import {
   formatCost,
+  formatEnergy,
   formatLatency,
   formatTokens,
+  formatTokensPerSec,
 } from "@/app/workspace/dashboard/utils/chartUtils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -454,6 +456,55 @@ export const createColumns = (
             {formatCost(row.original.cost)}
           </div>
         );
+      },
+    },
+    {
+      accessorKey: "energy_joules",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          data-testid="logs-energy-sort-btn"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Energy
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      size: 110,
+      cell: ({ row }) => {
+        const joules = row.original.energy_joules;
+        if (joules == null || joules === 0) {
+          return <div className="pl-4 font-mono text-[12px] text-muted-foreground">N/A</div>;
+        }
+        return (
+          <div className="pl-4 font-mono text-sm tabular-nums">
+            {formatEnergy(joules)}
+          </div>
+        );
+      },
+    },
+    {
+      id: "tokens_per_second",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          data-testid="logs-tps-sort-btn"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Tok/s
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      size: 90,
+      cell: ({ row }) => {
+        // Compute tokens/sec from completion_tokens and latency
+        const completion = row.original.completion_tokens;
+        const latency = row.original.latency;
+        if (!completion || !latency || latency <= 0) {
+          return <div className="pl-4 font-mono text-[12px] text-muted-foreground">N/A</div>;
+        }
+        const tps = (completion * 1000) / latency;
+        return <div className="pl-4 font-mono text-sm tabular-nums">{formatTokensPerSec(tps)}</div>;
       },
     },
   ];

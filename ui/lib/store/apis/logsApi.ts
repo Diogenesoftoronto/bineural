@@ -1,6 +1,7 @@
 import { RedactedDBKey, VirtualKey } from "@/lib/types/governance";
 import {
 	CostHistogramResponse,
+	EnergyHistogramResponse,
 	LatencyHistogramResponse,
 	LogEntry,
 	LogFilters,
@@ -16,6 +17,7 @@ import {
 	ProviderTokenHistogramResponse,
 	RecalculateCostResponse,
 	TokenHistogramResponse,
+	TPSHistogramResponse,
 } from "@/lib/types/logs";
 import { baseApi } from "./baseApi";
 import { RoutingRule } from "@/lib/types/routingRules";
@@ -227,6 +229,34 @@ export const logsApi = baseApi.injectEndpoints({
 			providesTags: ["Logs"],
 		}),
 
+		// Get energy (joules) + billed-cost (USD) histogram with filters
+		getLogsEnergyHistogram: builder.query<
+			EnergyHistogramResponse,
+			{
+				filters: LogFilters;
+			}
+		>({
+			query: ({ filters }) => ({
+				url: "/logs/histogram/energy",
+				params: buildFilterParams(filters),
+			}),
+			providesTags: ["Logs"],
+		}),
+
+		// Get tokens-per-second percentiles histogram with filters
+		getLogsTPSHistogram: builder.query<
+			TPSHistogramResponse,
+			{
+				filters: LogFilters;
+			}
+		>({
+			query: ({ filters }) => ({
+				url: "/logs/histogram/tps",
+				params: buildFilterParams(filters),
+			}),
+			providesTags: ["Logs"],
+		}),
+
 		// Get provider cost histogram with provider breakdown
 		getLogsProviderCostHistogram: builder.query<
 			ProviderCostHistogramResponse,
@@ -342,6 +372,8 @@ export const {
 	useGetLogsCostHistogramQuery,
 	useGetLogsModelHistogramQuery,
 	useGetLogsLatencyHistogramQuery,
+	useGetLogsEnergyHistogramQuery,
+	useGetLogsTPSHistogramQuery,
 	useGetLogsProviderCostHistogramQuery,
 	useGetLogsProviderTokenHistogramQuery,
 	useGetLogsProviderLatencyHistogramQuery,
@@ -356,6 +388,8 @@ export const {
 	useLazyGetLogsCostHistogramQuery,
 	useLazyGetLogsModelHistogramQuery,
 	useLazyGetLogsLatencyHistogramQuery,
+	useLazyGetLogsEnergyHistogramQuery,
+	useLazyGetLogsTPSHistogramQuery,
 	useLazyGetLogsProviderCostHistogramQuery,
 	useLazyGetLogsProviderTokenHistogramQuery,
 	useLazyGetLogsProviderLatencyHistogramQuery,

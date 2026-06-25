@@ -1235,7 +1235,7 @@ func (p *GovernancePlugin) EvaluateGovernanceRequest(ctx *schemas.BifrostContext
 			},
 		}
 
-	case DecisionBudgetExceeded:
+	case DecisionBudgetExceeded, DecisionEnergyBudgetExceeded:
 		return result, &schemas.BifrostError{
 			Type:       bifrost.Ptr(string(result.Decision)),
 			StatusCode: bifrost.Ptr(402),
@@ -1596,18 +1596,34 @@ func (p *GovernancePlugin) postHookWorker(result *schemas.BifrostResponse, provi
 			cost = p.modelCatalog.CalculateCost(result, pricingScopes)
 		}
 		tokensUsed := 0
+		var energyJoules float64
 		if result != nil {
 			switch {
 			case result.TextCompletionResponse != nil && result.TextCompletionResponse.Usage != nil:
 				tokensUsed = result.TextCompletionResponse.Usage.TotalTokens
+				if result.TextCompletionResponse.Usage.Energy != nil {
+					energyJoules = result.TextCompletionResponse.Usage.Energy.EnergyJoules
+				}
 			case result.ChatResponse != nil && result.ChatResponse.Usage != nil:
 				tokensUsed = result.ChatResponse.Usage.TotalTokens
+				if result.ChatResponse.Usage.Energy != nil {
+					energyJoules = result.ChatResponse.Usage.Energy.EnergyJoules
+				}
 			case result.ResponsesResponse != nil && result.ResponsesResponse.Usage != nil:
 				tokensUsed = result.ResponsesResponse.Usage.TotalTokens
+				if result.ResponsesResponse.Usage.Energy != nil {
+					energyJoules = result.ResponsesResponse.Usage.Energy.EnergyJoules
+				}
 			case result.ResponsesStreamResponse != nil && result.ResponsesStreamResponse.Response != nil && result.ResponsesStreamResponse.Response.Usage != nil:
 				tokensUsed = result.ResponsesStreamResponse.Response.Usage.TotalTokens
+				if result.ResponsesStreamResponse.Response.Usage.Energy != nil {
+					energyJoules = result.ResponsesStreamResponse.Response.Usage.Energy.EnergyJoules
+				}
 			case result.EmbeddingResponse != nil && result.EmbeddingResponse.Usage != nil:
 				tokensUsed = result.EmbeddingResponse.Usage.TotalTokens
+				if result.EmbeddingResponse.Usage.Energy != nil {
+					energyJoules = result.EmbeddingResponse.Usage.Energy.EnergyJoules
+				}
 			case result.SpeechResponse != nil && result.SpeechResponse.Usage != nil:
 				tokensUsed = result.SpeechResponse.Usage.TotalTokens
 			case result.SpeechStreamResponse != nil && result.SpeechStreamResponse.Usage != nil:
@@ -1626,6 +1642,7 @@ func (p *GovernancePlugin) postHookWorker(result *schemas.BifrostResponse, provi
 			Success:      success,
 			TokensUsed:   int64(tokensUsed),
 			Cost:         cost,
+			EnergyJoules: energyJoules,
 			RequestID:    requestID,
 			UserID:       userID,
 			IsStreaming:  isStreaming,

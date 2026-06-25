@@ -846,6 +846,7 @@ func (cu *BifrostLLMUsage) ToResponsesResponseUsage() *ResponsesResponseUsage {
 		OutputTokens: cu.CompletionTokens,
 		TotalTokens:  cu.TotalTokens,
 		Cost:         cu.Cost,
+		Energy:       cu.Energy,
 	}
 
 	if cu.PromptTokensDetails != nil {
@@ -882,6 +883,7 @@ func (ru *ResponsesResponseUsage) ToBifrostLLMUsage() *BifrostLLMUsage {
 		CompletionTokens: ru.OutputTokens,
 		TotalTokens:      ru.TotalTokens,
 		Cost:             ru.Cost,
+		Energy:           ru.Energy,
 	}
 
 	if ru.InputTokensDetails != nil {

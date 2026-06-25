@@ -51,6 +51,11 @@ type LogManager interface {
 
 	// GetLatencyHistogram returns time-bucketed latency percentiles for the given filters
 	GetLatencyHistogram(ctx context.Context, filters *logstore.SearchFilters, bucketSizeSeconds int64) (*logstore.LatencyHistogramResult, error)
+	// GetEnergyHistogram returns time-bucketed energy (joules) + billed-cost
+	// (USD) totals per bucket. Power is derived from joules / bucket size.
+	GetEnergyHistogram(ctx context.Context, filters *logstore.SearchFilters, bucketSizeSeconds int64) (*logstore.EnergyHistogramResult, error)
+	// GetTPSHistogram returns time-bucketed tokens-per-second percentiles per bucket.
+	GetTPSHistogram(ctx context.Context, filters *logstore.SearchFilters, bucketSizeSeconds int64) (*logstore.TPSHistogramResult, error)
 
 	// GetProviderCostHistogram returns time-bucketed cost data with provider breakdown for the given filters
 	GetProviderCostHistogram(ctx context.Context, filters *logstore.SearchFilters, bucketSizeSeconds int64) (*logstore.ProviderCostHistogramResult, error)
@@ -223,6 +228,20 @@ func (p *PluginLogManager) GetLatencyHistogram(ctx context.Context, filters *log
 		return nil, fmt.Errorf("filters cannot be nil")
 	}
 	return p.plugin.GetLatencyHistogram(ctx, *filters, bucketSizeSeconds)
+}
+
+func (p *PluginLogManager) GetEnergyHistogram(ctx context.Context, filters *logstore.SearchFilters, bucketSizeSeconds int64) (*logstore.EnergyHistogramResult, error) {
+	if filters == nil {
+		return nil, fmt.Errorf("filters cannot be nil")
+	}
+	return p.plugin.GetEnergyHistogram(ctx, *filters, bucketSizeSeconds)
+}
+
+func (p *PluginLogManager) GetTPSHistogram(ctx context.Context, filters *logstore.SearchFilters, bucketSizeSeconds int64) (*logstore.TPSHistogramResult, error) {
+	if filters == nil {
+		return nil, fmt.Errorf("filters cannot be nil")
+	}
+	return p.plugin.GetTPSHistogram(ctx, *filters, bucketSizeSeconds)
 }
 
 func (p *PluginLogManager) GetProviderCostHistogram(ctx context.Context, filters *logstore.SearchFilters, bucketSizeSeconds int64) (*logstore.ProviderCostHistogramResult, error) {

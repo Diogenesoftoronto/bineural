@@ -644,6 +644,9 @@ func triggerMigrations(ctx context.Context, db *gorm.DB) error {
 	if err := migrationAddSSOTables(ctx, db); err != nil {
 		return err
 	}
+	if err := migrationAddEnergyDimensionToBudgets(ctx, db); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -7381,6 +7384,49 @@ func migrationAddSSOTables(ctx context.Context, db *gorm.DB) error {
 	}})
 	if err := m.Migrate(); err != nil {
 		return fmt.Errorf("error running add_sso_tables migration: %s", err.Error())
+	}
+	return nil
+}
+
+
+// migrationAddEnergyDimensionToBudgets adds max_energy_joules and
+// current_energy_joules columns to the governance_budgets table so that
+// per-budget energy caps can be configured alongside the existing USD cap.
+// Captured energy (Wh → joules) is reported by providers like Neuralwatt
+// via the x-energy-used response header and recorded into the energy
+// dimension of the corresponding budget.
+func migrationAddEnergyDimensionToBudgets(ctx context.Context, db *gorm.DB) error {
+	m := migrator.New(db, migrator.DefaultOptions, []*migrator.Migration{{
+		ID: "add_energy_dimension_to_budgets",
+		Migrate: func(tx *gorm.DB) error {
+			tx = tx.WithContext(ctx)
+			mg := tx.Migrator()
+			columns := []string{"max_energy_joules", "current_energy_joules"}
+			for _, col := range columns {
+				if !mg.HasColumn(&tables.TableBudget{}, col) {
+					if err := mg.AddColumn(&tables.TableBudget{}, col); err != nil {
+						return fmt.Errorf("failed to add %s column to governance_budgets: %w", col, err)
+					}
+				}
+			}
+			return nil
+		},
+		Rollback: func(tx *gorm.DB) error {
+			tx = tx.WithContext(ctx)
+			mg := tx.Migrator()
+			columns := []string{"max_energy_joules", "current_energy_joules"}
+			for _, col := range columns {
+				if mg.HasColumn(&tables.TableBudget{}, col) {
+					if err := mg.DropColumn(&tables.TableBudget{}, col); err != nil {
+						return fmt.Errorf("failed to drop %s column from governance_budgets: %w", col, err)
+					}
+				}
+			}
+			return nil
+		},
+	}})
+	if err := m.Migrate(); err != nil {
+		return fmt.Errorf("error running add_energy_dimension_to_budgets migration: %s", err.Error())
 	}
 	return nil
 }

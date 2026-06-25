@@ -23,6 +23,8 @@ export interface CreateGuardrailRuleRequest {
 	enabled: boolean;
 }
 
+export type UpdateGuardrailRuleRequest = Partial<CreateGuardrailRuleRequest>;
+
 export interface GuardrailProfile {
 	id: string | number;
 	name: string;
@@ -43,31 +45,39 @@ export interface CreateGuardrailProfileRequest {
 export const guardrailsApi = baseApi.injectEndpoints({
 	endpoints: (builder) => ({
 		listGuardrailRules: builder.query<ListGuardrailRulesResponse, void>({
-			query: () => "/enterprise/guardrails/rules",
+			query: () => "/guardrails/rules",
 			providesTags: ["GuardrailRules"],
 		}),
 		createGuardrailRule: builder.mutation<{ message: string; rule: GuardrailRule }, CreateGuardrailRuleRequest>({
 			query: (data) => ({
-				url: "/enterprise/guardrails/rules",
+				url: "/guardrails/rules",
 				method: "POST",
+				body: data,
+			}),
+			invalidatesTags: ["GuardrailRules"],
+		}),
+		updateGuardrailRule: builder.mutation<{ message: string; rule?: GuardrailRule }, { ruleId: string; data: UpdateGuardrailRuleRequest }>({
+			query: ({ ruleId, data }) => ({
+				url: `/guardrails/rules/${ruleId}`,
+				method: "PUT",
 				body: data,
 			}),
 			invalidatesTags: ["GuardrailRules"],
 		}),
 		deleteGuardrailRule: builder.mutation<{ message: string }, string>({
 			query: (ruleId) => ({
-				url: `/enterprise/guardrails/rules/${ruleId}`,
+				url: `/guardrails/rules/${ruleId}`,
 				method: "DELETE",
 			}),
 			invalidatesTags: ["GuardrailRules"],
 		}),
 		listGuardrailProfiles: builder.query<ListGuardrailProfilesResponse, void>({
-			query: () => "/enterprise/guardrails/profiles",
+			query: () => "/guardrails/profiles",
 			providesTags: ["Guardrails"],
 		}),
 		createGuardrailProfile: builder.mutation<{ message: string; profile: GuardrailProfile }, CreateGuardrailProfileRequest>({
 			query: (data) => ({
-				url: "/enterprise/guardrails/profiles",
+				url: "/guardrails/profiles",
 				method: "POST",
 				body: data,
 			}),
@@ -75,7 +85,7 @@ export const guardrailsApi = baseApi.injectEndpoints({
 		}),
 		deleteGuardrailProfile: builder.mutation<{ message: string }, string>({
 			query: (profileId) => ({
-				url: `/enterprise/guardrails/profiles/${profileId}`,
+				url: `/guardrails/profiles/${profileId}`,
 				method: "DELETE",
 			}),
 			invalidatesTags: ["Guardrails"],
@@ -86,6 +96,7 @@ export const guardrailsApi = baseApi.injectEndpoints({
 export const {
 	useListGuardrailRulesQuery,
 	useCreateGuardrailRuleMutation,
+	useUpdateGuardrailRuleMutation,
 	useDeleteGuardrailRuleMutation,
 	useListGuardrailProfilesQuery,
 	useCreateGuardrailProfileMutation,

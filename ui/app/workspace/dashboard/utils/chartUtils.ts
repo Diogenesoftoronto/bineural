@@ -92,4 +92,46 @@ export const CHART_COLORS = {
 	totalTokens: "#8b5cf6", // violet-500
 	cost: "#f59e0b", // amber-500
 	cachedReadTokens: "#06b6d4", // cyan-500
+	energyJoules: "#eab308", // yellow-500
+	billedCostUSD: "#f97316", // orange-500
+	avgPowerWatts: "#84cc16", // lime-500
+	tokensPerSec: "#ec4899", // pink-500
 };
+
+const ENERGY_UNITS: Array<[number, string]> = [
+	[1, "J"],
+	[1_000, "kJ"],
+	[1_000_000, "MJ"],
+];
+
+// Format energy in joules as a compact human-readable string.
+export function formatEnergy(joules: number): string {
+	const abs = Math.abs(joules);
+	if (abs === 0) return "0 J";
+	for (let i = ENERGY_UNITS.length - 1; i >= 0; i--) {
+		const [factor, unit] = ENERGY_UNITS[i];
+		if (abs >= factor) {
+			const v = joules / factor;
+			const fixed = v >= 100 ? 0 : v >= 10 ? 1 : 2;
+			return `${v.toFixed(fixed)} ${unit}`;
+		}
+	}
+	return `${joules.toFixed(2)} J`;
+}
+
+// Format an instantaneous power value (W).
+export function formatWatts(watts: number): string {
+	const abs = Math.abs(watts);
+	if (abs >= 1_000_000) return `${(watts / 1_000_000).toFixed(2)} MW`;
+	if (abs >= 1_000) return `${(watts / 1_000).toFixed(1)} kW`;
+	if (abs >= 1) return `${watts.toFixed(1)} W`;
+	if (abs >= 0.001) return `${(watts * 1_000).toFixed(0)} mW`;
+	return `${watts.toFixed(3)} W`;
+}
+
+// Format tokens-per-second.
+export function formatTokensPerSec(tps: number): string {
+	if (tps >= 1000) return `${(tps / 1000).toFixed(1)}k tok/s`;
+	if (tps >= 1) return `${tps.toFixed(1)} tok/s`;
+	return `${tps.toFixed(2)} tok/s`;
+}
